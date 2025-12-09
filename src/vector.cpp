@@ -77,6 +77,14 @@ void* vector_at(Vector* vec, size_t ind)
     VectorErr err = VECTOR_ERR_NONE;
     VECTOR_ASSERT_OK_(vec);
 
+    IF_DEBUG(
+        if(ind >= vec->size) {
+            err = VECTOR_ERR_OUT_OF_BOUND;
+            VECTOR_DUMP(vec, err, NULL, NULL);
+            return NULL;
+        }
+    )
+
     return VECTOR_AT(vec, ind);
 }
 

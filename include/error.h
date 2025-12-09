@@ -13,4 +13,6 @@ enum Err
 
 };
 
-}
+const char* strerr(Err err);
+
+} // compiler

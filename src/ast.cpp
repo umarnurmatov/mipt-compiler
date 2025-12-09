@@ -14,6 +14,7 @@
 #include "ioutils.h"
 #include "assertutils.h"
 #include "logutils.h"
+#include "token.h"
 #include "vector.h"
 
 namespace compiler {
@@ -57,17 +58,15 @@ Err verify_(AST* ast);
 
 #endif // _DEBUG
 
-#define DEFAULT_VAR_VECTOR_CAPACITY       10
-#define DEFAULT_TO_DELETE_VECTOR_CAPACITY 10
-
 Err ctor(AST* astree)
 {
     utils_assert(astree);
 
     astree->size = 0;
+
+    const size_t to_delete_cap = 10;
     
-    vector_ctor(&astree->identifiers, DEFAULT_VAR_VECTOR_CAPACITY, sizeof(token::Identifier));
-    vector_ctor(&astree->to_delete, DEFAULT_TO_DELETE_VECTOR_CAPACITY, sizeof(ASTNode*));
+    vector_ctor(&astree->to_delete, to_delete_cap, sizeof(ASTNode*));
 
     return ERR_NONE;
 }
@@ -77,11 +76,9 @@ Err copy_tree(AST* from, AST* to)
     to->size = from->size;
     to->root = copy_subtree(from, from->root, NULL);
 
-    vector_ctor(&to->identifiers, DEFAULT_VAR_VECTOR_CAPACITY, sizeof(token::Identifier));
-    vector_ctor(&to->to_delete, DEFAULT_TO_DELETE_VECTOR_CAPACITY, sizeof(ASTNode*));
+    const size_t to_delete_cap = 10;
 
-    for(size_t i = 0; i < from->identifiers.size; ++i)
-        vector_push(&to->identifiers, vector_at(&from->identifiers, i));
+    vector_ctor(&to->to_delete, to_delete_cap, sizeof(ASTNode*));
 
     return ERR_NONE;
 }
@@ -94,8 +91,6 @@ void dtor(AST* astree)
 
     astree->size = 0;
     astree->root = NULL;
-
-    vector_dtor(&astree->identifiers);
 
     for(size_t i = 0; i < astree->to_delete.size; ++i)
         free_subtree(*(ASTNode**)vector_at(&astree->to_delete, i));
@@ -168,26 +163,6 @@ static void print_node_ptr_(FILE* file, void* ptr)
     fprintf(file, "%p", *(ASTNode**)ptr);
 }
 
-const char* strerr(Err err)
-{
-    switch(err) {
-        case ERR_NONE:
-            return "none";
-        case NULLPTR:
-            return "passed a nullptr";
-        case INVALID_BUFPOS:
-            return "buffer position invalid";
-        case ALLOC_FAIL:
-            return "memory allocation failed";
-        case IO_ERR:
-            return "io error";
-        case SYNTAX_ERR:
-            return "syntax error";
-        default:
-            return "unknown";
-    }
-}
-
 void node_print(FILE* stream, void* node)
 {
     utils_assert(stream);
@@ -197,18 +172,17 @@ void node_print(FILE* stream, void* node)
     fprintf(stream, "[%p; l: %p; r: %p; p: %p]", node_, node_->left, node_->right, node_->parent);
 }
 
-ASTNode* new_node(token::Type node_type, token::Token node_value, ASTNode *left, ASTNode *right, ASTNode *parent)
+ASTNode* new_node(token::Token* token, ASTNode *left, ASTNode *right, ASTNode *parent)
 {
     ASTNode* node = TYPED_CALLOC(1, ASTNode);
 
     if(!node) return NULL;
 
     *node = {
-        .left = left,
-        .right = right,
+        .left   = left,
+        .right  = right,
         .parent = parent,
-        .type = node_type,
-        .value = node_value,
+        .token  = *token
     };
 
     if(right)
@@ -222,7 +196,7 @@ ASTNode* new_node(token::Type node_type, token::Token node_value, ASTNode *left,
 
 ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent)
 {
-    ASTNode *new_node = ast::new_node(node->type, node->value, NULL, NULL, NULL);
+    ASTNode *new_node = ast::new_node(&node->token, NULL, NULL, NULL);
 
     if(node->left)
         new_node->left = copy_subtree(astree, node->left, new_node);
@@ -235,25 +209,24 @@ ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent)
     return new_node;
 }
 
-static char* node_value_str_(AST* astree, token::Type node_type, token::Token val)
+static char* node_value_str_(AST* astree, token::Token* token)
 {
     static const size_t buffer_len = 100;
     static char buffer[buffer_len] = "";
 
-    switch(node_type) {
+    switch(token->type) {
         case token::TYPE_OPERATOR:
-            return const_cast<char*>(node_op_type_str(val.op_type));
-        case token::TYPE_VAR: 
+            return const_cast<char*>(node_op_type_str(token->val.op_type));
+        case token::TYPE_IDENTIFIER: 
         {
-            token::Identifier* var = find_identifier(astree, val.id);
-            if(var) {
-                snprintf(buffer, buffer_len, "%s", var->str);
-                return buffer;
-            }
+            // if(var) {
+            //     snprintf(buffer, buffer_len, "%s", var->str);
+            //     return buffer;
+            // }
             break;
         }
-        case token::TYPE_NUM:
-            strfromd(buffer, buffer_len, "%f", val.num);
+        case token::TYPE_LITERAL:
+            strfromd(buffer, buffer_len, "%d", token->val.num);
             return buffer;
         case token::TYPE_FAKE:
             return const_cast<char*>("fakeval");
@@ -279,21 +252,6 @@ static char* node_value_str_(AST* astree, token::Type node_type, token::Token va
 
 void dump(AST* ast, ASTNode* node, Err err, const char* msg, const char* filename, int line, const char* funcname)
 {
-    utils_log_fprintf(
-        "<style>"
-        "table {"
-          "border-collapse: collapse;"
-          "border: 1px solid;"
-          "font-size: 0.9em;"
-        "}"
-        "th,"
-        "td {"
-          "border: 1px solid rgb(160 160 160);"
-          "padding: 8px 10px;"
-        "}"
-        "</style>\n"
-    );
-
     utils_log_fprintf("<pre>\n"); 
 
     time_t cur_time = time(NULL);
@@ -310,58 +268,6 @@ void dump(AST* ast, ASTNode* node, Err err, const char* msg, const char* filenam
 
     if(msg)
         utils_log_fprintf("what: %s\n", msg);
-
-
-    BEGIN {
-        if(!ast->buf.ptr) GOTO_END;
-
-        utils_log_fprintf("buf.pos = %ld\n", ast->buf.pos); 
-        utils_log_fprintf("buf.len = %ld\n", ast->buf.len); 
-        utils_log_fprintf("buf.ptr[%p] = ", ast->buf.ptr); 
-
-        if(err == INVALID_BUFPOS) {
-            for(ssize_t i = 0; i < ast->buf.len; ++i)
-                utils_log_fprintf("%c", ast->buf.ptr[i]);
-            utils_log_fprintf("\n");
-            GOTO_END;
-        }
-
-#define CLR_PREV "#09AB00"
-#define CLR_CUR  "#C71022"
-#define CLR_NEXT "#1022C7"
-
-#define LOG_PRINTF_CHAR(ch, col) \
-    if(ch == '\0') \
-        utils_log_fprintf("<span style=\"border: 1px solid" col ";\">0</span>"); \
-    else if(isspace(ch)) \
-        utils_log_fprintf("<span style=\"border: 1px solid" col ";\"> </span>"); \
-    else \
-        utils_log_fprintf("%c", ch);
-
-        utils_log_fprintf("<font color=\"" CLR_PREV "\">"); 
-        for(ssize_t i = 0; i < ast->buf.pos; ++i) {
-            LOG_PRINTF_CHAR(ast->buf.ptr[i], CLR_PREV);
-        }
-        utils_log_fprintf("</font>");
-
-
-        utils_log_fprintf("<font color=\"" CLR_CUR "\"><b>");
-        LOG_PRINTF_CHAR(ast->buf.ptr[ast->buf.pos], CLR_CUR);
-        utils_log_fprintf("</b></font>");
-
-
-        utils_log_fprintf("<font color=\"" CLR_NEXT "\">"); 
-        for(ssize_t i = ast->buf.pos + 1; i < ast->buf.len; ++i) {
-            LOG_PRINTF_CHAR(ast->buf.ptr[i], CLR_NEXT);
-        }
-        utils_log_fprintf("</font>\n");
-
-    } END;
-
-#undef CLR_PREV
-#undef CLR_CUR
-#undef CLR_NEXT
-#undef LOG_PRINTF_CHAR
 
     char* img_pref = dump_graphviz_(ast, node);
 
@@ -429,7 +335,7 @@ void dump_node_graphviz_(AST* astree, FILE* file, ASTNode* node, int rank)
             file, 
             "node_%p["
             "shape=record,"
-            "label=\" { parent: %p | addr: %p | type: %s | val: %s | { L: %p | R: %p } } \","
+            "label=\" { parent: %p | addr: %p | { L: %p | R: %p } } \","
             "style=\"filled\","
             "color=" CLR_GREEN_BOLD_ ","
             "fillcolor=" CLR_GREEN_LIGHT_ ","
@@ -438,8 +344,6 @@ void dump_node_graphviz_(AST* astree, FILE* file, ASTNode* node, int rank)
             node,
             node->parent,
             node,
-            node_type_str(node->type),
-            node_value_str_(astree, node->type, node->value),
             node->left,
             node->right,
             rank
@@ -458,12 +362,6 @@ void dump_node_graphviz_(AST* astree, FILE* file, ASTNode* node, int rank)
                 "<td colspan=\"2\">addr: %p</td>"
               "</tr>"
               "<tr>"
-                "<td colspan=\"2\">type: %s</td>"
-              "</tr>"
-              "<tr>"
-                "<td colspan=\"2\">val: %s</td>"
-              "</tr>"
-              "<tr>"
                 "<td bgcolor=" CLR_RED_LIGHT_ ">L: %p</td>"
                 "<td bgcolor=" CLR_BLUE_LIGHT_">R: %p</td>"
               "</tr>"
@@ -473,8 +371,6 @@ void dump_node_graphviz_(AST* astree, FILE* file, ASTNode* node, int rank)
             node,
             node->parent,
             node,
-            node_type_str(node->type),
-            node_value_str_(astree, node->type, node->value),
             node->left,
             node->right,
             rank
@@ -534,9 +430,6 @@ Err verify_(AST* ast)
     if(!ast)
         return NULLPTR;
 
-    if(ast->buf.pos > ast->buf.len)
-        return INVALID_BUFPOS;
-    
     return ERR_NONE;
 }
 

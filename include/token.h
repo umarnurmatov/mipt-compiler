@@ -5,8 +5,6 @@
 namespace compiler {
 namespace token {
 
-const size_t MAX_OP_NAME_LEN = 10;
-
 enum Type
 {
     TYPE_OPERATOR,
@@ -14,6 +12,7 @@ enum Type
     TYPE_SEPARATOR,
     TYPE_IDENTIFIER,
     TYPE_LITERAL,
+    TYPE_TERMINATOR,
     TYPE_FAKE
 };
 
@@ -41,14 +40,14 @@ enum OperatorType
 struct Identifier
 {
     const char* str;
-    size_t str_len;
+    ssize_t str_len;
     utils_hash_t hash;
-    size_t id;
+    ssize_t id;
 };
 
 union Value
 {
-    size_t id;
+    ssize_t id;
     OperatorType op_type;
     KeywordType kw_type;
     SeparatorType sep_type;
@@ -64,7 +63,7 @@ struct Token
 struct TokenInfo
 {
     const char* str;
-    size_t str_len;
+    ssize_t str_len;
     Type type;
     Value val;
 };
@@ -81,9 +80,9 @@ struct TokenInfo
 static TokenInfo TokenArr[] = 
 {
     MAKE_KEYWORD("while",TYPE_KEYWORD, KEYWORD_TYPE_WHILE),
-    MAKE_KEYWORD("if", TYPE_KEYWORD, KEYWORD_TYPE_IF),
+    MAKE_KEYWORD("if",   TYPE_KEYWORD, KEYWORD_TYPE_IF),
     MAKE_KEYWORD("else", TYPE_KEYWORD, KEYWORD_TYPE_ELSE),
-    MAKE_OPERATOR("+",  TYPE_OPERATOR, OPERATOR_TYPE_ADD),
+    MAKE_OPERATOR("+",   TYPE_OPERATOR, OPERATOR_TYPE_ADD),
     MAKE_OPERATOR("-",  TYPE_OPERATOR, OPERATOR_TYPE_SUB),
     MAKE_OPERATOR("*",  TYPE_OPERATOR, OPERATOR_TYPE_MUL),
     MAKE_OPERATOR("/",  TYPE_OPERATOR, OPERATOR_TYPE_DIV),

@@ -37,5 +37,14 @@ void dtor(Lexer* lex);
 
 Err lex(Lexer *lex, const char* filename);
 
+#ifdef _DEBUG
+
+void dump(Lexer* lex, Err err, const char* msg, const char* filename, int line, const char* funcname);
+
+#define LEXER_DUMP(lex, err) \
+    compiler::lexer::dump(lex, err, NULL, __FILE__, __LINE__, __func__); 
+
+#endif // _DEBUG
+
 } // compiler 
 } // lexer 
