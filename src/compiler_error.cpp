@@ -1,4 +1,4 @@
-#include "error.h"
+#include "compiler_error.h"
 
 namespace compiler {
 

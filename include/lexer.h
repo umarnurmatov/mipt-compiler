@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include "vector.h"
-#include "error.h"
+#include "compiler_error.h"
 
 namespace compiler {
 namespace lexer {

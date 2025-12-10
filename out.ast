@@ -1,0 +1,1 @@
+( ADD ( ADD ( 1 nil nil )( MUL ( 2 nil nil )( ADD ( 2 nil nil )( 3 nil nil ))))( (null) nil nil ))

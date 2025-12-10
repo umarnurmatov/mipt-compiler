@@ -107,6 +107,8 @@ static size_t lex_(Lexer* lex)
         UTILS_LOGE(LOG_LEXER, "syntax error");
     }
 
+    LEXER_DUMP(lex, ERR_NONE);
+
     token = { 
         .type = token::TYPE_TERMINATOR,
         .val = token::Value { .id = 0 } };
@@ -132,7 +134,7 @@ static size_t lex_numeric_(Lexer* lex)
         return 0;
 
     token::Token tok = { 
-        .type = token::TYPE_LITERAL, 
+        .type = token::TYPE_NUM_LITERAL, 
         .val  = token::Value { .num = val } };
 
     vector_push(&lex->tokens, &tok);

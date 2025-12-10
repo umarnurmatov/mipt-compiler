@@ -6,7 +6,7 @@
 #include "vector.h"
 #include "token.h"
 
-#include "error.h"
+#include "compiler_error.h"
 
 #define AST_INITLIST                    \
     {                                   \
@@ -45,7 +45,7 @@ void dtor(AST* astree);
 
 void node_print(FILE* stream, void* node);
 
-Err fread_tree(AST* astree, const char* filename);
+Err fwrite_infix(AST* astree, FILE* stream);
 
 ASTNode* new_node(token::Token* token, ASTNode *left, ASTNode *right, ASTNode *parent);
 

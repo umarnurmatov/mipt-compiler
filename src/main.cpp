@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "ioutils.h"
 #include "lexer.h"
 #include "optutils.h"
 #include "syntax_analyzer.h"
@@ -8,8 +9,8 @@
 #include "logutils.h"
 #include "vector.h"
 
-static const char* LOG_OPT = "OPTIONS";
-static const char* LOG_APP = "APP";
+ATTR_UNUSED static const char* LOG_OPT = "OPTIONS";
+ATTR_UNUSED static const char* LOG_APP = "APP";
 
 static utils_long_opt_t long_opts[] = 
 {
@@ -53,6 +54,12 @@ int main(int argc, char* argv[])
     syntax::perform_recursive_descent(&analyzer);
 
     AST_DUMP(&astree, ERR_NONE);
+
+    FILE* out_stream = open_file(long_opts[2].arg, "w");
+    if(!out_stream)
+        return EXIT_FAILURE;
+
+    ast::fwrite_infix(&astree, out_stream);
 
     syntax::dtor(&analyzer);
 

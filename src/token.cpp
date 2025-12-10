@@ -8,31 +8,57 @@
 namespace compiler {
 namespace token {
 
-const char* type_str(Type node_type)
+const char* type_str(Type token_type)
 {
-    switch(node_type) {
-        case TYPE_OPERATOR: return "OP";
-        case TYPE_KEYWORD: return "OP";
-        case TYPE_SEPARATOR: return "OP";
-        case TYPE_IDENTIFIER: return "IDENT";
-        case TYPE_LITERAL:  return "LITERAL";
-        case TYPE_FAKE: return "FAKE";
-        default:        return "???";
+    switch(token_type) {
+        case TYPE_OPERATOR    : return "OPERATOR";
+        case TYPE_KEYWORD     : return "KEYWORD";
+        case TYPE_SEPARATOR   : return "SEPARATOR";
+        case TYPE_IDENTIFIER  : return "IDENTIFIER";
+        case TYPE_NUM_LITERAL : return "NUM_LITERAL";
+        case TYPE_TERMINATOR  : return "TERMINATOR";
+        case TYPE_FAKE        : return "FAKE";
+        default               : return "???";
     }
 }
 
-const char* node_op_type_str(OperatorType op_type)
+const char* value_str(token::Token* token)
 {
-    switch(op_type) {
-        case OPERATOR_TYPE_ADD:   return "ADD";
-        case OPERATOR_TYPE_SUB:   return "SUB";
-        case OPERATOR_TYPE_MUL:   return "MUL";
-        case OPERATOR_TYPE_DIV:   return "DIV";
-        case OPERATOR_TYPE_POW:   return "POW";
-        default: return "???";
-    }
-}
+    static const size_t buffer_len = 100;
+    static char buffer[buffer_len] = "";
 
+    switch(token->type) {
+        case TYPE_OPERATOR:
+        case TYPE_KEYWORD:
+        case TYPE_SEPARATOR:
+        {
+            for(size_t ind = 0; ind < SIZEOF(TokenArr); ++ind) {
+                if(token->val.enum_val == TokenArr[ind].val.enum_val)
+                    return TokenArr[ind].str_internal;
+            }
+            break;
+        }
+        case TYPE_IDENTIFIER: 
+        {
+            // if(var) {
+            //     snprintf(buffer, buffer_len, "%s", var->str);
+            //     return buffer;
+            // }
+            break;
+        }
+        case  TYPE_NUM_LITERAL:
+            snprintf(buffer, buffer_len, "%d", token->val.num);
+            return buffer;
+        case TYPE_TERMINATOR:
+            return "terminator";
+        case TYPE_FAKE:
+            return "fakeval";
+        default:
+            return "???";
+    }
+
+    return NULL;
+}
 
 } // token
 } // compiler

@@ -2,15 +2,31 @@
 
 #include "ast.h"
 #include "logutils.h"
-#include "memutils.h"
 #include "token.h"
 #include "vector.h"
-#include <error.h>
+#include "compiler_error.h"
 
 namespace compiler {
 namespace syntax {
 
 static const char* LOG_SYNTAX = "SYNTAX";
+
+#ifdef _DEBUG
+
+#define SYNTAX_ANANLYZER_ASSERT_OK_(ast)                         \
+    {                                                            \
+        Err err = verify_(ast);                                  \
+        if(err != ERR_NONE) {                                    \
+            UTILS_LOGE(LOG_SYNTAX, "%s", compiler::strerr(err)); \
+            utils_assert(err == ERR_NONE);                       \
+        }                                                        \
+    }
+
+#else
+
+#define SYNTAX_ANANLYZER_ASSERT_OK_(ast)
+
+#endif // _DEBUG
 
 static ast::ASTNode* get_expr_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_mul_div_(SyntaxAnalyzer* analyzer);
@@ -20,6 +36,12 @@ static ast::ASTNode* get_numeric_literal_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_identifier_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_func_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer);
+
+#ifdef _DEBUG
+
+static Err verify_(SyntaxAnalyzer* analyzer);
+
+#endif // _DEBUG
 
 static ast::ASTNode* new_node(SyntaxAnalyzer* analyzer, token::Token *token, ast::ASTNode *left, ast::ASTNode *right, ast::ASTNode *parent);
 
@@ -34,18 +56,35 @@ Err ctor(SyntaxAnalyzer* analyzer)
 
 void dtor(SyntaxAnalyzer* analyzer)
 {
+    utils_assert(analyzer);
+
     vector_dtor(&analyzer->to_delete);
 }
 
 Err perform_recursive_descent(SyntaxAnalyzer* analyzer)
 {
-    analyzer->astree->root = get_general_(analyzer);
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    ast::ASTNode* root = get_general_(analyzer);
+
+    if(!root)
+        return SYNTAX_ERR;
+
+    token::Token token = {
+        .type = token::TYPE_FAKE,
+        .val  = token::Value { .id = 0 }
+    };
+
+    analyzer->astree->root = 
+        ast::new_node(&token, root, NULL, NULL);
 
     return ERR_NONE;
 }
 
 static ast::ASTNode* new_node(SyntaxAnalyzer* analyzer, token::Token *token, ast::ASTNode *left, ast::ASTNode *right, ast::ASTNode *parent)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     ast::ASTNode* node = ast::new_node(token, left, right, parent);
     vector_push(&analyzer->to_delete, &node);
 
@@ -67,11 +106,13 @@ static ast::ASTNode* new_node(SyntaxAnalyzer* analyzer, token::Token *token, ast
 
 ast::ASTNode* get_numeric_literal_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     UTILS_LOGI(LOG_SYNTAX, "numeric");
 
     GET_CURRENT_TOKEN_(token);
 
-    if(token->type != token::TYPE_LITERAL)
+    if(token->type != token::TYPE_NUM_LITERAL)
         return NULL;
 
     ast::ASTNode* node = NEW_NODE(NULL, NULL, NULL);
@@ -82,6 +123,7 @@ ast::ASTNode* get_numeric_literal_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_identifier_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
 
     GET_CURRENT_TOKEN_(token);
 
@@ -96,6 +138,8 @@ ast::ASTNode* get_identifier_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_expr_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     UTILS_LOGI(LOG_SYNTAX, "expr");
 
     ast::ASTNode* node = get_mul_div_(analyzer);
@@ -118,6 +162,7 @@ ast::ASTNode* get_expr_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_mul_div_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
 
     UTILS_LOGI(LOG_SYNTAX, "mul_div");
     ast::ASTNode* node = get_pow_(analyzer);
@@ -140,6 +185,8 @@ ast::ASTNode* get_mul_div_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_pow_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     UTILS_LOGI(LOG_SYNTAX, "pow");
     ast::ASTNode* node = get_primary_(analyzer);
 
@@ -160,6 +207,8 @@ ast::ASTNode* get_pow_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     UTILS_LOGI(LOG_SYNTAX, "primary");
     ast::ASTNode* node = NULL;
 
@@ -189,6 +238,8 @@ ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
 
 ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
 {
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
     ast::ASTNode* node = get_expr_(analyzer);
 
     UTILS_LOGI(LOG_SYNTAX, "%lu", analyzer->lex->tokens.size);
@@ -211,6 +262,21 @@ ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
 #undef LOG_SYNTAX_ERR_
 #undef GET_CURRENT_TOKEN_
 #undef INCREMENT_POS_
+
+#ifdef _DEBUG
+
+static Err verify_(SyntaxAnalyzer* analyzer)
+{
+    if(!analyzer)
+        return NULLPTR;
+
+    if(analyzer->pos >= analyzer->lex->tokens.size)
+        return INVALID_BUFPOS;
+
+    return ERR_NONE;
+}
+
+#endif // _DEBUG
 
 } // syntax
 } // compiler

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ast.h"
-#include "error.h"
+#include "compiler_error.h"
 #include "lexer.h"
 
 namespace compiler {
