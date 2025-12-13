@@ -8,12 +8,12 @@ GENERAL            ::= FUNCTION_DECL+'\0'
 FUNCTION_DECL      ::= ["ret"]? IDENTIFIER '(' PARAMETER_LIST ')' COMPOUND_STATEMENT
 PARAMETER_LIST     ::= { IDENTIFIER { ',' IDENTIFIER }* } | <none>
 
-STATEMENT          ::= { EXPRESSION | WHILE | IF | DECLARATION | ASSIGNMENT | RETURN | COMPOUND_STATEMENT } ';'
-COMPOUND_STATEMENT ::= "{" STATEMENT+ "}"
+BLOCK              ::= "{" STATEMENT* "}"
+STATEMENT          ::= {  WHILE | IF | DECLARATION | ASSIGNMENT | RETURN } ';'
 
-WHILE              ::= "while" EXPRESSION STATEMENT
-IF                 ::= "if" EXPRESSION STATEMENT ELSE?
-ELSE               ::= "else" STATEMENT
+WHILE              ::= "while" EXPRESSION BLOCK
+IF                 ::= "if" EXPRESSION BLOCK ELSE?
+ELSE               ::= "else" BLOCK
 RETURN             ::= "return" EXPRESSION
 DECLARATION        ::= IDENTIFIER | ASSIGNMENT
 ASSIGNMENT         ::= IDENTIFIER '=' EXPRESSION

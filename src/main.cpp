@@ -1,3 +1,4 @@
+#include <error.h>
 #include <stdlib.h>
 
 #include "ast.h"
@@ -35,13 +36,12 @@ int main(int argc, char* argv[])
     IF_DEBUG(log_html_style());
 
     using namespace compiler;
-    
+
+    Err err = ERR_NONE;
+
     lexer::Lexer lex = LEXER_INITLIST;
-    lexer::ctor(&lex);
-    lexer::lex(&lex, long_opts[1].arg);
 
     ast::AST astree = AST_INITLIST;
-    ast::ctor(&astree); 
 
     syntax::SyntaxAnalyzer analyzer = {
         .lex       = &lex,
@@ -49,17 +49,33 @@ int main(int argc, char* argv[])
         .pos       = 0,
         .to_delete = VECTOR_INITLIST };
 
-    syntax::ctor(&analyzer);
+    BEGIN {
+        
+        lexer::ctor(&lex);
+        lexer::lex(&lex, long_opts[1].arg);
 
-    syntax::perform_recursive_descent(&analyzer);
+        ast::ctor(&astree); 
 
-    AST_DUMP(&astree, ERR_NONE);
+        syntax::ctor(&analyzer);
 
-    FILE* out_stream = open_file(long_opts[2].arg, "w");
-    if(!out_stream)
-        return EXIT_FAILURE;
+        err = syntax::perform_recursive_descent(&analyzer);
+        if(err == SYNTAX_ERR) {
+            UTILS_LOGE(LOG_APP, "syntax error, exit...");
+            GOTO_END;
+        }
 
-    ast::fwrite_infix(&astree, out_stream);
+
+            AST_DUMP(&astree, ERR_NONE);
+
+
+        FILE* out_stream = open_file(long_opts[2].arg, "w");
+        if(!out_stream)
+            return EXIT_FAILURE;
+
+        ast::fwrite_infix(&astree, out_stream);
+        fclose(out_stream);
+
+    } END;
 
     syntax::dtor(&analyzer);
 

@@ -11,7 +11,7 @@ struct SyntaxAnalyzer
 {
     lexer::Lexer* lex;
     ast::AST* astree;
-    size_t pos;
+    ssize_t pos;
 
     Vector to_delete;
 };

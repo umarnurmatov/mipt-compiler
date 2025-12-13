@@ -98,8 +98,6 @@ void dtor(AST* astree)
 
 void free_subtree(ASTNode* node)
 {
-    utils_assert(node);
-
     if(!node) return;
 
     if(node->left)
@@ -122,6 +120,7 @@ Err fwrite_infix(AST* astree, FILE* stream)
 {
     AST_ASSERT_OK_(astree);
     utils_assert(stream);
+    utils_assert(astree->root);
 
     Err err = fwrite_node_(astree->root->left, stream);
     return err;

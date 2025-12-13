@@ -14,6 +14,8 @@ namespace lexer {
             .ptr = NULL,          \
             .len = 0,             \
             .pos = 0,             \
+            .fileline = 0,        \
+            .filepos = 0,         \
             .filename = NULL      \
         },                        \
         .tokens = VECTOR_INITLIST \
@@ -24,6 +26,10 @@ struct Lexer {
         char* ptr;
         ssize_t len;
         ssize_t pos;
+        
+        ssize_t fileline;
+        ssize_t filepos;
+
         const char* filename;
     } buf;
 

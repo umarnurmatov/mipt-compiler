@@ -123,9 +123,9 @@ static size_t lex_numeric_(Lexer* lex)
     int val = 0;
     ssize_t prev = POS_;
 
-    if('0' <= BUF_[POS_] && BUF_[POS_] <= '9') {
-        int digit  = BUF_[POS_] - '0';
-        val += val * 10 + digit;
+    while(isdigit(BUF_[POS_])) {
+        int digit = BUF_[POS_] - '0';
+        val = val * 10 + digit;
 
         POS_++;
     }
