@@ -5,7 +5,7 @@ Language grammar in extended Backus-Naur form:
 ```
 GENERAL            ::= FUNCTION_DECL+'\0'
 
-FUNCTION_DECL      ::= ["ret"]? IDENTIFIER '(' PARAMETER_LIST ')' COMPOUND_STATEMENT
+FUNCTION_DECL      ::= ["ret"]? IDENTIFIER '(' PARAMETER_LIST ')' BLOCK
 PARAMETER_LIST     ::= { IDENTIFIER { ',' IDENTIFIER }* } | <none>
 
 BLOCK              ::= "{" STATEMENT* "}"
@@ -38,3 +38,15 @@ IDENTIFIER         ::= [а-яА-Я_][0-9а-яА-Я_]*
 ```
 
 ## AST format
+
+Tree is written in infix format: ``` (parent left right) ```:
+
+```
+WHILE                 -> (<while> <condition> <body>)
+IF [if-clause only]   -> (<if> <condition> <body>)
+IF [with else-clause] -> (<if> <condition> (<else> <if-body> <else-body>))
+FUNCTION_CALL         -> (<call> <identifier> <argument_list>)
+ARGUMENT_LIST         -> (<comma> <expression> (<comma> <expression> (...)))
+BLOCK                 -> (<cur_open> <statement> (<cur_open> <statement> (...)))
+ASSIGMENT             -> (<assigment> <identifier> <expression>)
+```

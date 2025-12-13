@@ -8,7 +8,7 @@
 #include "vector.h"
 #include "compiler_error.h"
 #include <cstddef>
-#include <exception>
+#include <thread>
 
 namespace compiler {
 namespace syntax {
@@ -34,7 +34,8 @@ static const char* LOG_SYNTAX = "SYNTAX";
 
 static ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_func_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_argument_list_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer);
@@ -114,12 +115,13 @@ static ast::ASTNode* new_node(SyntaxAnalyzer* analyzer, token::Token *token, ast
     return node;
 }
 
-#define LOG_SYNTAX_ERR_(msg, ...) \
-    UTILS_LOGE(LOG_SYNTAX, "%s:%ld:%ld: [%ld] syntax error: " msg, \
-            analyzer->lex->buf.filename, \
-            token->fileline, \
-            token->filepos, \
-            analyzer->pos __VA_OPT__(,) \
+#define LOG_SYNTAX_ERR_(msg, ...)                        \
+    UTILS_LOGE(LOG_SYNTAX,                               \
+            "[pos:%ld] %s:%ld:%ld: syntax error: " msg,  \
+            analyzer->pos,                               \
+            analyzer->lex->buf.filename,                 \
+            CURRENT_TOKEN_->fileline,                    \
+            CURRENT_TOKEN_->filepos __VA_OPT__(,)        \
             __VA_ARGS__)
 
 #define LOG_STACKTRACE \
@@ -166,6 +168,74 @@ ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
     return NULL;
 }
 
+static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer)
+                                                            
+    LOG_STACKTRACE
+                                                            
+    ssize_t pos_prev = analyzer->pos;
+
+    ast::ASTNode* node_ident = get_identifier_(analyzer);
+                                                            
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_SEPARATOR
+       && token->val.sep_type == token::SEPARATOR_TYPE_PAR_OPEN) {
+
+        INCREMENT_POS_;
+        token = CURRENT_TOKEN_;
+    }
+    else {
+        analyzer->pos = pos_prev;
+        NFREE(node_ident);
+        return NULL;
+    }
+
+    ast::ASTNode* node_arg = get_argument_list_(analyzer);
+    
+    token = CURRENT_TOKEN_;
+
+    if(token->type == token::TYPE_SEPARATOR
+       && token->val.sep_type == token::SEPARATOR_TYPE_PAR_CLOSE) {
+
+        INCREMENT_POS_;
+
+        token::Token tok = {
+            .type = token::TYPE_CALL
+        };
+
+        return NEW_NODE(&tok, node_ident, node_arg);
+    }
+
+    LOG_SYNTAX_ERR_("expected closing paranthesis");
+    return NULL;
+}
+
+static ast::ASTNode* get_argument_list_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer)
+                                                            
+    LOG_STACKTRACE
+                                                            
+    ast::ASTNode* node = get_expr_(analyzer);
+                                                            
+    GET_CURRENT_TOKEN_(token);
+                                                            
+    while(token->type == token::TYPE_SEPARATOR
+          && token->val.sep_type == token::SEPARATOR_TYPE_COMMA) {                                      
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_right = get_expr_(analyzer);
+
+        node = NEW_NODE(token, node, node_right);
+
+        token = CURRENT_TOKEN_;
+    }
+                                                            
+    return node;
+}
+
 static ast::ASTNode* get_if_(SyntaxAnalyzer* analyzer)
 {
     SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
@@ -174,14 +244,33 @@ static ast::ASTNode* get_if_(SyntaxAnalyzer* analyzer)
 
     GET_CURRENT_TOKEN_(token);
 
-    if(token->type == token::TYPE_KEYWORD && token->val.kw_type == token::KEYWORD_TYPE_IF){
+    if(token->type == token::TYPE_KEYWORD 
+       && token->val.kw_type == token::KEYWORD_TYPE_IF){
+
         INCREMENT_POS_;
 
-        ast::ASTNode* node_left = get_expr_(analyzer);
+        ast::ASTNode* node_condition = get_expr_(analyzer);
 
-        ast::ASTNode* node_right = get_block_(analyzer);
+        if(!node_condition) {
+            LOG_SYNTAX_ERR_("expected if-condition");
+            return NULL;
+        }
 
-        return NEW_NODE(token, node_left, node_right);
+        ast::ASTNode* node_body = get_block_(analyzer);
+
+        if(!node_condition) {
+            LOG_SYNTAX_ERR_("expected if-body");
+            return NULL;
+        }
+
+        ast::ASTNode* node_else = get_else_(analyzer);
+
+        if(node_else) {
+            node_else->left = node_body;
+            return NEW_NODE(token, node_condition, node_else);
+        }
+
+        return NEW_NODE(token, node_condition, node_body);
     }
 
     return NULL;
@@ -195,14 +284,52 @@ static ast::ASTNode* get_while_(SyntaxAnalyzer* analyzer)
 
     GET_CURRENT_TOKEN_(token);
 
-    if(token->type == token::TYPE_KEYWORD && token->val.kw_type == token::KEYWORD_TYPE_WHILE){
+    if(token->type == token::TYPE_KEYWORD 
+       && token->val.kw_type == token::KEYWORD_TYPE_WHILE){
+
         INCREMENT_POS_;
 
-        ast::ASTNode* node_left = get_expr_(analyzer);
+        ast::ASTNode* node_condition = get_expr_(analyzer);
 
-        ast::ASTNode* node_right = get_block_(analyzer);
+        if(!node_condition) {
+            LOG_SYNTAX_ERR_("expected while-condition");
+            return NULL;
+        }
 
-        return NEW_NODE(token, node_left, node_right);
+        ast::ASTNode* node_body = get_block_(analyzer);
+
+        if(!node_body) {
+            LOG_SYNTAX_ERR_("expected while-body");
+            return NULL;
+        }
+
+        return NEW_NODE(token, node_condition, node_body);
+    }
+
+    return NULL;
+}
+
+static ast::ASTNode* get_else_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE;
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD 
+       && token->val.kw_type == token::KEYWORD_TYPE_ELSE){
+
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_body = get_block_(analyzer);
+
+        if(!node_body) {
+            LOG_SYNTAX_ERR_("expected else-body");
+            return NULL;
+        }
+
+        return NEW_NODE(token, NULL, node_body);
     }
 
     return NULL;
@@ -216,14 +343,14 @@ static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer)
 
     GET_CURRENT_TOKEN_(token);
 
-    if(token->type == token::TYPE_SEPARATOR && token->val.sep_type == token::SEPARATOR_TYPE_CURLY_OPEN) {
+    if(token->type == token::TYPE_SEPARATOR 
+       && token->val.sep_type == token::SEPARATOR_TYPE_CURLY_OPEN) {
+
         INCREMENT_POS_;
         token = CURRENT_TOKEN_;
     }
-    else {
-        LOG_SYNTAX_ERR_("expected curly brace");
+    else
         return NULL;
-    }
 
     ast::ASTNode* root = get_statement_(analyzer);
 
@@ -232,11 +359,14 @@ static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer)
     ast::ASTNode* node = root, *right = NULL;
     token = CURRENT_TOKEN_;
 
-    while(!(token->type == token::TYPE_SEPARATOR && token->val.sep_type == token::SEPARATOR_TYPE_CURLY_CLOSE)) {
+    while(!(token->type == token::TYPE_SEPARATOR 
+          && token->val.sep_type == token::SEPARATOR_TYPE_CURLY_CLOSE)) {
+
         right = get_statement_(analyzer);
 
         if(!right) {
             LOG_SYNTAX_ERR_("expected statement");
+            return NULL;
         }
 
         node->right = right;
@@ -316,7 +446,8 @@ static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer)
     ast::ASTNode* left = get_identifier_(analyzer);
 
     token = CURRENT_TOKEN_;
-    if(token->type == token::TYPE_OPERATOR && token->val.op_type == token::OPERATOR_TYPE_ASSIGN) {
+    if(token->type == token::TYPE_OPERATOR 
+       && token->val.op_type == token::OPERATOR_TYPE_ASSIGN) {
 
         INCREMENT_POS_;
 
@@ -355,7 +486,6 @@ static ast::ASTNode* get_##suffix(SyntaxAnalyzer* analyzer) \
         INCREMENT_POS_;                                     \
                                                             \
         ast::ASTNode* node_right = next(analyzer);          \
-                                                            \
                                                             \
         node = NEW_NODE(token, node, node_right);           \
                                                             \
@@ -435,14 +565,13 @@ ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
         return node;
     }
 
+    node = get_func_call_(analyzer);
+    if(node) return node;
+
     node = get_numeric_literal_(analyzer);
     if(node) return node;
 
-    // node = get_func_(analyzer);
-    // if(node) return node;
-
     node = get_identifier_(analyzer);
-
     return node;
 }
 
@@ -491,7 +620,7 @@ static Err verify_(SyntaxAnalyzer* analyzer)
     if(!analyzer)
         return NULLPTR;
 
-    if(analyzer->pos >= analyzer->lex->tokens.size)
+    if(analyzer->pos >= (signed) analyzer->lex->tokens.size)
         return INVALID_BUFPOS;
 
     return ERR_NONE;

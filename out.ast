@@ -1,1 +1,1 @@
-( SEMICOL ( IF ( EQ ( ADD ( 1 nil nil )( 2 nil nil ))( 3 nil nil ))( SEMICOL ( ASSGN ( (null) nil nil )( 1 nil nil )) nil ))( SEMICOL ( WHILE ( EQ ( 1 nil nil )( 2 nil nil ))( SEMICOL ( ASSGN ( (null) nil nil )( 3 nil nil ))( SEMICOL ( ASSGN ( (null) nil nil )( ADD ( (null) nil nil )( POW ( (null) nil nil )( 2 nil nil )))) nil ))) nil ))
+( SEMICOL ( ASSGN ( (null) nil nil )( function call ( (null) nil nil )( COMMA ( COMMA ( 1 nil nil )( (null) nil nil ))( 123 nil nil )))) nil )
