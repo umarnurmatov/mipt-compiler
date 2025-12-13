@@ -86,9 +86,12 @@ static size_t lex_(Lexer* lex)
 
                 token.val = token::TokenArr[i].val;
                 token.type = token::TokenArr[i].type;
+                token.filepos = lex->buf.filepos;
+                token.fileline = lex->buf.fileline;
                 vector_push(&lex->tokens, &token);
 
                 POS_ += token::TokenArr[i].str_len;
+                lex->buf.filepos++;
                 continue;
             }
         }
@@ -98,7 +101,16 @@ static size_t lex_(Lexer* lex)
         if(lex_identificator_(lex) > 0) continue;
 
         if(isspace(BUF_[POS_])) {
-            while(isspace(BUF_[POS_])) POS_++;
+            while(isspace(BUF_[POS_])) {
+                if(BUF_[POS_] == '\n') {
+                    lex->buf.fileline++;
+                    lex->buf.filepos = 0;
+                }
+                else
+                    lex->buf.filepos++;
+
+                POS_++;
+            }
             continue;
         }
 
@@ -128,6 +140,7 @@ static size_t lex_numeric_(Lexer* lex)
         val = val * 10 + digit;
 
         POS_++;
+        lex->buf.filepos++;
     }
     
     if(prev == POS_)
@@ -150,6 +163,7 @@ static size_t lex_identificator_(Lexer* lex)
     while(isalnum(BUF_[POS_])) {
         POS_++;
         len++;
+        lex->buf.filepos++;
     }
 
     if(prev == POS_)
