@@ -9,7 +9,7 @@ FUNCTION_DECL      ::= ["ret"]? IDENTIFIER '(' PARAMETER_LIST ')' COMPOUND_STATE
 PARAMETER_LIST     ::= { IDENTIFIER { ',' IDENTIFIER }* } | <none>
 
 BLOCK              ::= "{" STATEMENT* "}"
-STATEMENT          ::= {  WHILE | IF | DECLARATION | ASSIGNMENT | RETURN } ';'
+STATEMENT          ::= {  WHILE | IF } | { { DECLARATION | ASSIGNMENT | RETURN } ';' }
 
 WHILE              ::= "while" EXPRESSION BLOCK
 IF                 ::= "if" EXPRESSION BLOCK ELSE?

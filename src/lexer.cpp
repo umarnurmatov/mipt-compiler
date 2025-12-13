@@ -56,6 +56,8 @@ Err lex(Lexer *lex, const char* filename)
 
     lex_(lex);
 
+    LEXER_DUMP(lex, ERR_NONE);
+
     return ERR_NONE;
 }
 
@@ -78,8 +80,6 @@ static size_t lex_(Lexer* lex)
     token::Token token = { .type = token::TYPE_FAKE, .val = token::Value { .num = 0 } };
 
     while(BUF_[POS_] != '\0') {
-        
-        LEXER_DUMP(lex, ERR_NONE);
 
         for(size_t i = 0; i < SIZEOF(token::TokenArr); ++i) {
             if(POS_ + token::TokenArr[i].str_len < LEN_ && strncmp(token::TokenArr[i].str, BUF_ + POS_, (unsigned) token::TokenArr[i].str_len) == 0) {
@@ -253,7 +253,14 @@ void dump(Lexer* lex, Err err, const char* msg, const char* filename, int line, 
 #undef CLR_NEXT
 #undef LOG_PRINTF_CHAR
 
-    utils_log_fprintf("</pre>\n"); 
+    utils_log_fprintf("\nTokens:");
+
+    for(size_t i = 0; i < lex->tokens.size; ++i) {
+        token::Token* tok = (token::Token*)vector_at(&lex->tokens, i);
+        utils_log_fprintf("(%lu, %s, %s) ", i, token::type_str(tok->type), token::value_str(tok));
+    }
+
+    utils_log_fprintf("\n</pre>\n"); 
 
     utils_log_fprintf("<hr color=\"black\" />\n");
 

@@ -166,6 +166,48 @@ ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
     return NULL;
 }
 
+static ast::ASTNode* get_if_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE;
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD && token->val.kw_type == token::KEYWORD_TYPE_IF){
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_left = get_expr_(analyzer);
+
+        ast::ASTNode* node_right = get_block_(analyzer);
+
+        return NEW_NODE(token, node_left, node_right);
+    }
+
+    return NULL;
+}
+
+static ast::ASTNode* get_while_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE;
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD && token->val.kw_type == token::KEYWORD_TYPE_WHILE){
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_left = get_expr_(analyzer);
+
+        ast::ASTNode* node_right = get_block_(analyzer);
+
+        return NEW_NODE(token, node_left, node_right);
+    }
+
+    return NULL;
+}
+
 static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer)
 {
     SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
@@ -184,12 +226,21 @@ static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer)
     }
 
     ast::ASTNode* root = get_statement_(analyzer);
-    ast::ASTNode* node = root;
+
+    if(!root) return NULL;
+
+    ast::ASTNode* node = root, *right = NULL;
     token = CURRENT_TOKEN_;
 
     while(!(token->type == token::TYPE_SEPARATOR && token->val.sep_type == token::SEPARATOR_TYPE_CURLY_CLOSE)) {
-        node->right = get_statement_(analyzer);
-        node = node->right;
+        right = get_statement_(analyzer);
+
+        if(!right) {
+            LOG_SYNTAX_ERR_("expected statement");
+        }
+
+        node->right = right;
+        node = right;
         token = CURRENT_TOKEN_;
     }
 
@@ -205,22 +256,52 @@ static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer)
     LOG_STACKTRACE;
 
     ast::ASTNode* node = NULL;
+    bool semicol_needed = true;
 
     BEGIN {
 
+        node = get_while_(analyzer);
+        if(node) {
+            semicol_needed = false;
+            GOTO_END;
+        }
+
+        node = get_if_(analyzer);
+        if(node) {
+            semicol_needed = false;
+            GOTO_END;
+        }
+
         node = get_assignment_(analyzer);
+        if(node) GOTO_END;
+
+        node = get_expr_(analyzer);
         if(node) GOTO_END;
 
     } END;
 
     GET_CURRENT_TOKEN_(token);
-    if(token->type == token::TYPE_SEPARATOR && token->val.sep_type == token::SEPARATOR_TYPE_SEMICOLON) {
-        INCREMENT_POS_;
-        return NEW_NODE(token, node, NULL);
+
+    if(semicol_needed) {
+        if(token->type == token::TYPE_SEPARATOR 
+           && token->val.sep_type == token::SEPARATOR_TYPE_SEMICOLON) {
+            INCREMENT_POS_;
+            return NEW_NODE(token, node, NULL);
+        }
+        else {
+            LOG_SYNTAX_ERR_("expected semicolon");
+            return NULL;
+        }
     }
 
-    LOG_SYNTAX_ERR_("expected semicolon");
-    return NULL;
+    token::Token semicol = {
+        .type = token::TYPE_SEPARATOR,
+        .val = token::Value 
+            { .sep_type = token::SEPARATOR_TYPE_SEMICOLON }
+    };
+
+    return NEW_NODE(&semicol, node, NULL);
+
 }
 
 static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer)
