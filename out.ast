@@ -1,1 +1,1 @@
-( SEMICOL ( ASSGN ( (null) nil nil )( function call ( (null) nil nil )( COMMA ( COMMA ( 1 nil nil )( (null) nil nil ))( 123 nil nil )))) nil )
+( CUR_OPEN ( (null) ( (null) nil nil )( SEMICOL ( ASSGN ( (null) nil nil )( function call ( (null) nil nil )( COMMA ( COMMA ( 1 nil nil )( (null) nil nil ))( 123 nil nil )))) nil ))( (null) ( COMMA ( COMMA ( (null) nil nil )( (null) nil nil ))( (null) nil nil ))( SEMICOL ( ASSGN ( (null) nil nil )( function call ( (null) nil nil )( COMMA ( COMMA ( 1 nil nil )( (null) nil nil ))( 123 nil nil )))) nil )))

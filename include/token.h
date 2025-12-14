@@ -44,16 +44,17 @@ enum KeywordType
     KEYWORD_TYPE_WHILE       = 0x0F,
     KEYWORD_TYPE_IF          = 0x10,
     KEYWORD_TYPE_ELSE        = 0x11,
-    KEYWORD_TYPE_RETURN      = 0x12,
+    KEYWORD_TYPE_DEFUN       = 0x12,
+    KEYWORD_TYPE_RETURN      = 0x13,
 };
 
 enum SeparatorType {
-    SEPARATOR_TYPE_PAR_OPEN    = 0x13,
-    SEPARATOR_TYPE_PAR_CLOSE   = 0x14,
-    SEPARATOR_TYPE_COMMA       = 0x15,
-    SEPARATOR_TYPE_SEMICOLON   = 0x16,
-    SEPARATOR_TYPE_CURLY_OPEN  = 0x17,
-    SEPARATOR_TYPE_CURLY_CLOSE = 0x18,
+    SEPARATOR_TYPE_PAR_OPEN    = 0x14,
+    SEPARATOR_TYPE_PAR_CLOSE   = 0x15,
+    SEPARATOR_TYPE_COMMA       = 0x16,
+    SEPARATOR_TYPE_SEMICOLON   = 0x17,
+    SEPARATOR_TYPE_CURLY_OPEN  = 0x18,
+    SEPARATOR_TYPE_CURLY_CLOSE = 0x19,
 };
 
 /* --------------------------------- */
@@ -130,6 +131,7 @@ ATTR_UNUSED static TokenInfo TokenArr[] =
     MAKE_KEYWORD  ("while" , "WHILE"       , TYPE_KEYWORD   , KEYWORD_TYPE_WHILE      ),
     MAKE_KEYWORD  ("if"    , "IF"          , TYPE_KEYWORD   , KEYWORD_TYPE_IF         ),
     MAKE_KEYWORD  ("else"  , "ELSE"        , TYPE_KEYWORD   , KEYWORD_TYPE_ELSE       ),
+    MAKE_KEYWORD  ("defun" , "DEFUN"       , TYPE_KEYWORD   , KEYWORD_TYPE_DEFUN      ),
     MAKE_KEYWORD  ("return", "RET"         , TYPE_KEYWORD   , KEYWORD_TYPE_RETURN     ),
     MAKE_SEPARATOR("("     , "PAR_OPEN"    , TYPE_SEPARATOR , SEPARATOR_TYPE_PAR_OPEN ),
     MAKE_SEPARATOR(")"     , "PAR_CLOSE"   , TYPE_SEPARATOR , SEPARATOR_TYPE_PAR_CLOSE),

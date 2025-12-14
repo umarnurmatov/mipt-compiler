@@ -34,6 +34,11 @@ static const char* LOG_SYNTAX = "SYNTAX";
 
 static ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer);
 
+static ast::ASTNode* get_program_(SyntaxAnalyzer* analyzer);
+
+static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer);
+
 static ast::ASTNode* get_argument_list_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer);
 
@@ -144,7 +149,7 @@ ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
 
     LOG_STACKTRACE;
 
-    ast::ASTNode* node = get_block_(analyzer);
+    ast::ASTNode* node = get_program_(analyzer);
     
     GET_CURRENT_TOKEN_(token);
 
@@ -166,6 +171,114 @@ ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer)
         free(*(ast::ASTNode **)vector_at(&analyzer->to_delete, i));
 
     return NULL;
+}
+
+static ast::ASTNode* get_program_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer)
+                                                            
+    LOG_STACKTRACE
+
+    ast::ASTNode* node = get_func_decl_(analyzer);
+
+    token::Token token = {
+        .type = token::TYPE_SEPARATOR,
+        .val = token::Value { .sep_type = token::SEPARATOR_TYPE_CURLY_OPEN }
+    };
+
+    while(node) {                                      
+
+        ast::ASTNode* node_right = get_func_decl_(analyzer);
+
+        if(!node_right) break;
+
+        node = NEW_NODE(&token, node, node_right);
+    }
+                                                            
+    return node;
+}
+
+static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer)
+                                                            
+    LOG_STACKTRACE
+                                                            
+    GET_CURRENT_TOKEN_(token_defun);
+
+    if(token_defun->type == token::TYPE_KEYWORD
+       && token_defun->val.kw_type == token::KEYWORD_TYPE_DEFUN) {
+
+        INCREMENT_POS_;
+    }
+    else
+        return NULL;
+
+    ast::ASTNode* node_id = get_identifier_(analyzer);
+    
+    if(!node_id) {
+        LOG_SYNTAX_ERR_("expected symbol name");
+        return NULL;
+    }
+
+    GET_CURRENT_TOKEN_(token);
+    if(token->type == token::TYPE_SEPARATOR
+       && token->val.sep_type == token::SEPARATOR_TYPE_PAR_OPEN) {
+
+        INCREMENT_POS_;
+    }
+    else {
+        LOG_SYNTAX_ERR_("expected open paranthesis");
+        return NULL;
+    }
+
+    ast::ASTNode* node_parlist = get_parameter_list_(analyzer);
+
+    token = CURRENT_TOKEN_;
+    if(token->type == token::TYPE_SEPARATOR
+       && token->val.sep_type == token::SEPARATOR_TYPE_PAR_CLOSE) {
+
+        INCREMENT_POS_;
+    }
+    else {
+        LOG_SYNTAX_ERR_("expected open paranthesis");
+        return NULL;
+    }
+    
+    ast::ASTNode* node_body = get_block_(analyzer);
+    if(!node_body) {
+        LOG_SYNTAX_ERR_("expected function body");
+        return NULL;
+    }
+    
+    node_id->left = node_parlist;
+    node_id->right = node_body;
+
+    return node_id;
+}
+
+static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer)
+                                                            
+    LOG_STACKTRACE
+                                                            
+    ast::ASTNode* node = get_identifier_(analyzer);
+                                                            
+    GET_CURRENT_TOKEN_(token);
+                                                            
+    while(token->type == token::TYPE_SEPARATOR
+          && token->val.sep_type == token::SEPARATOR_TYPE_COMMA) {                                      
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_right = get_identifier_(analyzer);
+
+        node = NEW_NODE(token, node, node_right);
+
+        token = CURRENT_TOKEN_;
+    }
+                                                            
+    return node;
 }
 
 static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer)

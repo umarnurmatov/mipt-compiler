@@ -47,7 +47,7 @@ const char* value_str(token::Token* token)
             // }
             break;
         }
-        case  TYPE_NUM_LITERAL:
+        case TYPE_NUM_LITERAL:
             snprintf(buffer, buffer_len, "%d", token->val.num);
             return buffer;
         case TYPE_CALL:

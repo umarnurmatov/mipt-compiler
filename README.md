@@ -5,7 +5,7 @@ Language grammar in extended Backus-Naur form:
 ```
 GENERAL            ::= FUNCTION_DECL+'\0'
 
-FUNCTION_DECL      ::= ["ret"]? IDENTIFIER '(' PARAMETER_LIST ')' BLOCK
+FUNCTION_DECL      ::= "defun" IDENTIFIER '(' PARAMETER_LIST ')' BLOCK
 PARAMETER_LIST     ::= { IDENTIFIER { ',' IDENTIFIER }* } | <none>
 
 BLOCK              ::= "{" STATEMENT* "}"
@@ -34,7 +34,7 @@ PRIMARY            ::= FUNCTION_CALL | IDENTIFIER | LITERAL | '(' EXPRESSION ')'
 LITERAL            ::= NUMERIC_LITERAL | STRING_LITERAL
 NUMERIC_LITERAL    ::= [0-9]+
 STRING_LITERAL     ::= ["]([^"\\\n]|\\.)*["]
-IDENTIFIER         ::= [а-яА-Я_][0-9а-яА-Я_]*
+IDENTIFIER         ::= [a-zA-Z_][0-9a-zA-Z_]*
 ```
 
 ## AST format
@@ -45,8 +45,13 @@ Tree is written in infix format: ``` (parent left right) ```:
 WHILE                 -> (<while> <condition> <body>)
 IF [if-clause only]   -> (<if> <condition> <body>)
 IF [with else-clause] -> (<if> <condition> (<else> <if-body> <else-body>))
+
 FUNCTION_CALL         -> (<call> <identifier> <argument_list>)
 ARGUMENT_LIST         -> (<comma> <expression> (<comma> <expression> (...)))
+
 BLOCK                 -> (<cur_open> <statement> (<cur_open> <statement> (...)))
 ASSIGMENT             -> (<assigment> <identifier> <expression>)
+
+FUNCTION_DECL         -> (<identifier> <parameter_list> <body>)
+PARAMETER_LIST        -> (<comma> <identifier> (<comma> <identifier> (...)))
 ```
