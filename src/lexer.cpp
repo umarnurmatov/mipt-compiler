@@ -6,7 +6,7 @@
 #include <time.h>
 
 #include "assertutils.h"
-#include "hashutils.h"
+#include "compiler_error.h"
 #include "ioutils.h"
 
 #include "logutils.h"
@@ -18,9 +18,10 @@ static const char* LOG_LEXER = "LEXER";
 namespace compiler {
 namespace lexer {
 
-static size_t lex_(Lexer* lex);
-static size_t lex_numeric_(Lexer* lex);
-static size_t lex_identificator_(Lexer* lex);
+static void advance_pos_(Lexer* lex);
+static ssize_t lex_(Lexer* lex);
+static ssize_t lex_numeric_(Lexer* lex);
+static ssize_t lex_identificator_(Lexer* lex);
 
 Err ctor(Lexer* lex)
 {
@@ -52,7 +53,10 @@ Err lex(Lexer *lex, const char* filename)
     lex->buf.len = (unsigned) bytes_transferred;
     lex->buf.ptr[lex->buf.len - 1] = '\0';
 
-    lex_(lex);
+    ssize_t token_cnt = lex_(lex);
+
+    if(token_cnt == -1)
+        return LEXICAL_ERR;
 
     LEXER_DUMP(lex, ERR_NONE);
 
@@ -72,14 +76,34 @@ void dtor(Lexer* lex)
 #define POS_ lex->buf.pos
 #define LEN_ lex->buf.len
 
-static size_t lex_(Lexer* lex)
+static void advance_pos_(Lexer* lex)
+{
+    utils_assert(lex);
+
+    if(BUF_[POS_] == '\n') {
+        lex->buf.fileline++;
+        lex->buf.filepos = 0;
+    }
+    else
+        lex->buf.filepos++;
+
+    POS_++;
+}
+
+static ssize_t lex_(Lexer* lex)
 {
     token::Token token = { .type = token::TYPE_FAKE, .val = token::Value { .num = 0 } };
 
     while(BUF_[POS_] != '\0') {
+        
+        int comment_offset = 0;
+        sscanf(BUF_ + POS_, "// %*[^\n]%n", &comment_offset);
+        POS_ += comment_offset;
+        lex->buf.filepos += comment_offset;
 
         for(size_t i = 0; i < SIZEOF(token::TokenArr); ++i) {
-            if(POS_ + token::TokenArr[i].str_len < LEN_ && strncmp(token::TokenArr[i].str, BUF_ + POS_, (unsigned) token::TokenArr[i].str_len) == 0) {
+            if(POS_ + token::TokenArr[i].str_len < LEN_ 
+               && strncmp(token::TokenArr[i].str, BUF_ + POS_, (unsigned) token::TokenArr[i].str_len) == 0) {
 
                 token.val      = token::TokenArr[i].val;
                 token.type     = token::TokenArr[i].type;
@@ -99,22 +123,23 @@ static size_t lex_(Lexer* lex)
         if(lex_identificator_(lex) > 0) continue;
 
         if(isspace(BUF_[POS_])) {
-            while(isspace(BUF_[POS_])) {
-                if(BUF_[POS_] == '\n') {
-                    lex->buf.fileline++;
-                    lex->buf.filepos = 0;
-                }
-                else
-                    lex->buf.filepos++;
+            while(isspace(BUF_[POS_]))
+                advance_pos_(lex);
 
-                POS_++;
-            }
             continue;
         }
 
-        // SYNTAX_ERROR
-        
-        UTILS_LOGE(LOG_LEXER, "syntax error");
+        if(BUF_[POS_] == '\0') continue;
+
+        UTILS_LOGE(LOG_LEXER, 
+            "%s:%ld:%ld: lexical error, unexpected symbol <%c>",
+            lex->buf.filename,
+            lex->buf.fileline,
+            lex->buf.filepos,
+            BUF_[POS_]);
+
+        LEXER_DUMP(lex, LEXICAL_ERR);
+        return -1;
     }
 
     LEXER_DUMP(lex, ERR_NONE);
@@ -125,10 +150,10 @@ static size_t lex_(Lexer* lex)
 
     vector_push(&lex->tokens, &token);
 
-    return lex->tokens.size;
+    return (signed) lex->tokens.size;
 }
 
-static size_t lex_numeric_(Lexer* lex)
+static ssize_t lex_numeric_(Lexer* lex)
 {
     int val = 0;
     ssize_t prev = POS_;
@@ -153,7 +178,7 @@ static size_t lex_numeric_(Lexer* lex)
     return 1;
 }
 
-static size_t lex_identificator_(Lexer* lex)
+static ssize_t lex_identificator_(Lexer* lex)
 {
     ssize_t prev = POS_;
     size_t len = 0;

@@ -1,7 +1,9 @@
+#include <cstdlib>
 #include <error.h>
 #include <stdlib.h>
 
 #include "ast.h"
+#include "compiler_error.h"
 #include "ioutils.h"
 #include "lexer.h"
 #include "optutils.h"
@@ -49,10 +51,17 @@ int main(int argc, char* argv[])
         .pos       = 0,
         .to_delete = VECTOR_INITLIST };
 
+    bool err_occured = false;
     BEGIN {
         
         lexer::ctor(&lex);
-        lexer::lex(&lex, long_opts[1].arg);
+        
+        err = lexer::lex(&lex, long_opts[1].arg);
+        if(err == LEXICAL_ERR) {
+            err_occured = true;
+            UTILS_LOGE(LOG_APP, "lex error, exit...");
+            GOTO_END;
+        }
 
         ast::ctor(&astree); 
 
@@ -60,17 +69,18 @@ int main(int argc, char* argv[])
 
         err = syntax::perform_recursive_descent(&analyzer);
         if(err == SYNTAX_ERR) {
+            err_occured = true;
             UTILS_LOGE(LOG_APP, "syntax error, exit...");
             GOTO_END;
         }
 
-
-            AST_DUMP(&astree, ERR_NONE);
-
+        AST_DUMP(&astree, ERR_NONE);
 
         FILE* out_stream = open_file(long_opts[2].arg, "w");
-        if(!out_stream)
-            return EXIT_FAILURE;
+        if(!out_stream) {
+            err_occured = true;
+            GOTO_END;
+        }
 
         ast::fwrite_infix(&astree, out_stream);
         fclose(out_stream);
@@ -85,7 +95,7 @@ int main(int argc, char* argv[])
 
     utils_end_log();
 
-    return EXIT_SUCCESS;
+    return err_occured ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 #ifdef _DEBUG
