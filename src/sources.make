@@ -1,1 +1,0 @@
-SOURCES += lexer.cpp vector.cpp token.cpp syntax_analyzer.cpp compiler_error.cpp ast.cpp main.cpp

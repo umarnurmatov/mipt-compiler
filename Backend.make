@@ -1,12 +1,12 @@
-# PROGRAM CONFIG
-BUILD_DIR    := build
-SRC_DIR      := src
-TEST_DIR     := test
-INCLUDE_DIRS := include
-LOG_DIR      := log
-EXECUTABLE   := compiler.out
 
--include $(SRC_DIR)/sources.make
+# PROGRAM CONFIG
+BUILD_DIR    := build/backend
+SRC_DIR      := src
+INCLUDE_DIRS := include
+LOG_DIR      := log/backend
+EXECUTABLE   := backend.out
+
+-include $(SRC_DIR)/backend.src
 OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(notdir $(SOURCES)))
 DEPS := $(patsubst %.o,%.d,$(OBJS))
 
