@@ -8,6 +8,15 @@
 namespace compiler {
 namespace token {
 
+#define TOKEN_INITLIST                \
+    {                                 \
+        .type     = token::TYPE_NONE, \
+        .val      = { .num = 0 },  \
+        .fileline = 0,             \
+        .filepos  = 0,             \
+        .id       = 0              \
+    }                              
+
 enum Type
 {
     TYPE_OPERATOR,
@@ -17,7 +26,8 @@ enum Type
     TYPE_NUM_LITERAL,
     TYPE_CALL,
     TYPE_TERMINATOR,
-    TYPE_FAKE
+    TYPE_FAKE,
+    TYPE_NONE
 };
 
 /* Enumerator values MUST be sequential */
@@ -76,12 +86,13 @@ struct Token
 {
     Type type;
     Value val;
-    int id; // for name table, do not ask why it's here
-            // actually it's because i was too lazy to separate
-            // nodes and tokens :)
 
     ssize_t fileline;
     ssize_t filepos;
+
+    int id; // for name table, do not ask why it's here
+            // actually it's because i was too lazy to separate
+            // nodes and tokens :)
 };
 
 struct TokenInfo
@@ -140,6 +151,8 @@ ATTR_UNUSED static TokenInfo TokenArr[] =
 const char* type_str(Type token_type);
 
 const char* value_str(Token* token);
+
+Token* match_internal(utils_str_t* str);
 
 } // token
 } // compiler

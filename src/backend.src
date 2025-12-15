@@ -1,1 +1,1 @@
-SOURCES := backend_main.cpp
+SOURCES += vector.cpp token.cpp compiler_error.cpp ast.cpp backend_main.cpp

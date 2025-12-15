@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <error.h>
 #include <stdlib.h>
 
@@ -39,10 +40,33 @@ int main(int argc, char* argv[])
 
     Err err = ERR_NONE;
 
+    ast::AST astree = AST_INITLIST;
+    ast::ctor(&astree);
+
+    bool err_occured = false;
+
+    BEGIN {
+
+        FILE* file = open_file(long_opts[1].arg, "r");
+        if(!file) {
+            err_occured = true;
+            GOTO_END;
+        }
+
+        err = ast::fread_infix(&astree, file, long_opts[1].arg);
+
+        if(err != ERR_NONE) {
+            err_occured = true;
+            GOTO_END;
+        }
+
+    } END;
+
+    ast::dtor(&astree);
 
     utils_end_log();
 
-    return EXIT_SUCCESS;
+    return err_occured ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 #ifdef _DEBUG

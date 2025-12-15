@@ -81,10 +81,11 @@ static size_t lex_(Lexer* lex)
         for(size_t i = 0; i < SIZEOF(token::TokenArr); ++i) {
             if(POS_ + token::TokenArr[i].str_len < LEN_ && strncmp(token::TokenArr[i].str, BUF_ + POS_, (unsigned) token::TokenArr[i].str_len) == 0) {
 
-                token.val = token::TokenArr[i].val;
-                token.type = token::TokenArr[i].type;
-                token.filepos = lex->buf.filepos;
+                token.val      = token::TokenArr[i].val;
+                token.type     = token::TokenArr[i].type;
+                token.filepos  = lex->buf.filepos;
                 token.fileline = lex->buf.fileline;
+
                 vector_push(&lex->tokens, &token);
 
                 POS_ += token::TokenArr[i].str_len;

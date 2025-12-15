@@ -14,7 +14,12 @@
         .root        = NULL,            \
         .size        = 0,               \
         .to_delete   = VECTOR_INITLIST, \
-        .name_table  = VECTOR_INITLIST  \
+        .name_table  = VECTOR_INITLIST, \
+        .buf = {            \
+            .ptr = NULL,    \
+            .len = 0,       \
+            .pos = 0        \
+        }                   \
     };                      
 
 namespace compiler {
@@ -38,6 +43,11 @@ struct AST
     Vector to_delete;
     Vector name_table;
 
+    struct {
+        char*   ptr;
+        ssize_t len;
+        ssize_t pos;
+    } buf;
 };
 
 Err ctor(AST* astree);
@@ -49,6 +59,8 @@ void dtor(AST* astree);
 void node_print(FILE* stream, void* node);
 
 Err fwrite_infix(AST* astree, FILE* stream);
+
+Err fread_infix(AST* astree, FILE* stream, const char* filename);
 
 ASTNode* new_node(token::Token* token, ASTNode *left, ASTNode *right, ASTNode *parent);
 

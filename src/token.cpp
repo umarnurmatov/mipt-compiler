@@ -19,6 +19,7 @@ const char* type_str(Type token_type)
         case TYPE_CALL        : return "CALL";
         case TYPE_TERMINATOR  : return "TERMINATOR";
         case TYPE_FAKE        : return "FAKE";
+        case TYPE_NONE        : return "NONE";
         default               : return "???";
     }
 }
@@ -42,7 +43,7 @@ const char* value_str(token::Token* token)
         case TYPE_IDENTIFIER: 
         {
             utils_str_t* str = &token->val.str;
-            snprintf(buffer, buffer_len, "[%.*s id:%d]", (int) str->len, str->str, token->id);
+            snprintf(buffer, buffer_len, "%.*s", (int) str->len, str->str);
             return buffer;
         }
         case TYPE_NUM_LITERAL:
@@ -54,11 +55,18 @@ const char* value_str(token::Token* token)
             return "terminator";
         case TYPE_FAKE:
             return "fakeval";
+        case TYPE_NONE:
+            return "none";
         default:
             return "???";
     }
 
     return NULL;
+}
+
+Token* match_internal(utils_str_t* str)
+{
+    
 }
 
 } // token

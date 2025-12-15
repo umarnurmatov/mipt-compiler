@@ -62,7 +62,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 .PHONY: run
 run: $(BUILD_DIR)/$(EXECUTABLE)
-	./$< --log=log.html --in=input.txt --out=out.ast
+	./$< --log=log.html --in=out.ast --out=out.ast
 
 .PHONY: clean
 clean:
