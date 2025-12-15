@@ -1,6 +1,7 @@
 #pragma once
 #include "hashutils.h"
 #include "utils.h"
+#include "stringutils.h"
 
 #define TOKEN_NIL_STR "nil"
 
@@ -59,17 +60,9 @@ enum SeparatorType {
 
 /* --------------------------------- */
 
-struct Identifier
-{
-    const char*  str;
-    ssize_t      str_len;
-    utils_hash_t hash;
-    ssize_t      id;
-};
-
 union Value
 {
-    ssize_t       id;
+    utils_str_t   str; // pointer to lex buffer
 
     OperatorType  op_type;
     KeywordType   kw_type;
@@ -83,6 +76,9 @@ struct Token
 {
     Type type;
     Value val;
+    int id; // for name table, do not ask why it's here
+            // actually it's because i was too lazy to separate
+            // nodes and tokens :)
 
     ssize_t fileline;
     ssize_t filepos;

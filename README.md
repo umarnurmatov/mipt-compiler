@@ -15,7 +15,7 @@ WHILE              ::= "while" EXPRESSION BLOCK
 IF                 ::= "if" EXPRESSION BLOCK ELSE?
 ELSE               ::= "else" BLOCK
 RETURN             ::= "return" EXPRESSION
-DECLARATION        ::= IDENTIFIER | ASSIGNMENT
+DECLARATION        ::= IDENTIFIER | ASSIGMENT
 ASSIGNMENT         ::= IDENTIFIER '=' EXPRESSION
 
 FUNCTION_CALL      ::= IDENTIFIER'(' ARGUMENT_LIST ')'

@@ -27,9 +27,7 @@ Err ctor(Lexer* lex)
     utils_assert(lex);
 
     const size_t tokens_cap = 10;
-    const size_t name_table_cap = 10;
     vector_ctor(&lex->tokens, tokens_cap, sizeof(token::Token));
-    vector_ctor(&lex->name_table, name_table_cap, sizeof(token::Identifier));
 
     return ERR_NONE;
 }
@@ -68,7 +66,6 @@ void dtor(Lexer* lex)
     NFREE(lex->buf.ptr);
 
     vector_dtor(&lex->tokens);
-    vector_dtor(&lex->name_table);
 }
 
 #define BUF_ lex->buf.ptr
@@ -123,7 +120,7 @@ static size_t lex_(Lexer* lex)
 
     token = { 
         .type = token::TYPE_TERMINATOR,
-        .val = token::Value { .id = 0 } };
+        .val = token::Value { .num = 0 } };
 
     vector_push(&lex->tokens, &token);
 
@@ -158,7 +155,7 @@ static size_t lex_numeric_(Lexer* lex)
 static size_t lex_identificator_(Lexer* lex)
 {
     ssize_t prev = POS_;
-    ssize_t len = 0;
+    size_t len = 0;
 
     while(isalnum(BUF_[POS_])) {
         POS_++;
@@ -169,21 +166,17 @@ static size_t lex_identificator_(Lexer* lex)
     if(prev == POS_)
         return 0;
 
-    token::Identifier identifier = {
-        .str = BUF_ + prev,
-        .str_len = len,
-        .hash = utils_djb2_hash(BUF_ + prev, (unsigned) len),
-        .id = (signed) lex->name_table.size };
-
-    vector_push(&lex->name_table, &identifier);
-
     token::Token tok = { 
         .type = token::TYPE_IDENTIFIER,
-        .val = token::Value { .id = identifier.id } };
+        .val = token::Value {
+            .str = {
+                .str = BUF_ + prev,
+                .len = len
+            }
+        }
+    };
 
     vector_push(&lex->tokens, &tok);
-
-    UTILS_LOGD(LOG_LEXER, "got identifier %.*s", (int)identifier.str_len, identifier.str);
 
     return 1;
 }

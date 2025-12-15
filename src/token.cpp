@@ -41,11 +41,9 @@ const char* value_str(token::Token* token)
         }
         case TYPE_IDENTIFIER: 
         {
-            // if(var) {
-            //     snprintf(buffer, buffer_len, "%s", var->str);
-            //     return buffer;
-            // }
-            break;
+            utils_str_t* str = &token->val.str;
+            snprintf(buffer, buffer_len, "[%.*s id:%d]", (int) str->len, str->str, token->id);
+            return buffer;
         }
         case TYPE_NUM_LITERAL:
             snprintf(buffer, buffer_len, "%d", token->val.num);

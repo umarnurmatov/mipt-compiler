@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "symbol.h"
 #include "vector.h"
 #include "token.h"
 
@@ -12,7 +13,8 @@
     {                                   \
         .root        = NULL,            \
         .size        = 0,               \
-        .to_delete   = VECTOR_INITLIST  \
+        .to_delete   = VECTOR_INITLIST, \
+        .name_table  = VECTOR_INITLIST  \
     };                      
 
 namespace compiler {
@@ -31,9 +33,10 @@ struct ASTNode
 struct AST
 {
     ASTNode* root;
-    size_t size;
+    size_t   size;
 
     Vector to_delete;
+    Vector name_table;
 
 };
 
@@ -50,6 +53,10 @@ Err fwrite_infix(AST* astree, FILE* stream);
 ASTNode* new_node(token::Token* token, ASTNode *left, ASTNode *right, ASTNode *parent);
 
 ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent);
+
+int find_symbol(AST* astree, utils_str_t* str, SymbolType type);
+
+int add_symbol(AST* astree, utils_str_t* str, SymbolType type);
 
 void free_subtree(ASTNode* node);
 

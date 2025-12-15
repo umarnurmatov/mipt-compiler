@@ -14,7 +14,7 @@ namespace lexer {
             .ptr = NULL,          \
             .len = 0,             \
             .pos = 0,             \
-            .fileline = 0,        \
+            .fileline = 1,        \
             .filepos = 0,         \
             .filename = NULL      \
         },                        \
@@ -34,7 +34,6 @@ struct Lexer {
     } buf;
 
     Vector tokens;
-    Vector name_table;
 };
 
 Err ctor(Lexer* lex);

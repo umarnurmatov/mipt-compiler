@@ -3,12 +3,11 @@
 #include "ast.h"
 #include "logutils.h"
 #include "memutils.h"
+#include "symbol.h"
 #include "token.h"
 #include "utils.h"
 #include "vector.h"
 #include "compiler_error.h"
-#include <cstddef>
-#include <thread>
 
 namespace compiler {
 namespace syntax {
@@ -101,7 +100,7 @@ Err perform_recursive_descent(SyntaxAnalyzer* analyzer)
 
     token::Token token = {
         .type = token::TYPE_FAKE,
-        .val  = token::Value { .id = 0 }
+        .val  = { .num = 0 }
     };
 
     analyzer->astree->root = 
@@ -250,7 +249,15 @@ static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer)
         LOG_SYNTAX_ERR_("expected function body");
         return NULL;
     }
-    
+
+    int sym_id = ast::add_symbol(
+        analyzer->astree, 
+        &node_id->token.val.str, 
+        SYMBOL_TYPE_FUNCTION);
+
+    utils_assert(sym_id >= 0);
+
+    node_id->token.id = sym_id;
     node_id->left = node_parlist;
     node_id->right = node_body;
 
@@ -264,7 +271,16 @@ static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer)
     LOG_STACKTRACE
                                                             
     ast::ASTNode* node = get_identifier_(analyzer);
-                                                            
+
+    if(node) {
+        int sym_id = ast::add_symbol(
+            analyzer->astree, 
+            &node->token.val.str, 
+            SYMBOL_TYPE_PARAMETER);
+
+        node->token.id = sym_id;
+    }
+
     GET_CURRENT_TOKEN_(token);
                                                             
     while(token->type == token::TYPE_SEPARATOR
@@ -272,6 +288,15 @@ static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer)
         INCREMENT_POS_;
 
         ast::ASTNode* node_right = get_identifier_(analyzer);
+
+        int sym_id = ast::add_symbol(
+            analyzer->astree, 
+            &node_right->token.val.str, 
+            SYMBOL_TYPE_PARAMETER);
+
+        UTILS_LOGD(LOG_SYNTAX, "%d", sym_id);
+
+        node_right->token.id = sym_id;
 
         node = NEW_NODE(token, node, node_right);
 
@@ -562,9 +587,28 @@ static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer)
     if(token->type == token::TYPE_OPERATOR 
        && token->val.op_type == token::OPERATOR_TYPE_ASSIGN) {
 
+        if(!left) {
+            LOG_SYNTAX_ERR_("expected l-value");
+            return NULL;
+        }
+
         INCREMENT_POS_;
 
-        ast::ASTNode* right  = get_expr_(analyzer);
+        ast::ASTNode* right = get_expr_(analyzer);
+
+        if(!right) {
+            LOG_SYNTAX_ERR_("expected expression");
+            return NULL;
+        }
+
+        int sym_id = ast::add_symbol(
+            analyzer->astree, 
+            &left->token.val.str, 
+            SYMBOL_TYPE_VARIABLE);
+
+        utils_assert(sym_id >= 0);
+
+        left->token.id = sym_id;
 
         return NEW_NODE(token, left, right);
     }
@@ -685,6 +729,17 @@ ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
     if(node) return node;
 
     node = get_identifier_(analyzer);
+
+    if(node) {
+        int sym_id = ast::find_symbol(analyzer->astree, &node->token.val.str, SYMBOL_TYPE_VARIABLE);
+
+        if(sym_id < 0) {
+            LOG_SYNTAX_ERR_("unknown symbol %s", token::value_str(&node->token));
+            NFREE(node);
+            return NULL;
+        }
+    }
+
     return node;
 }
 
