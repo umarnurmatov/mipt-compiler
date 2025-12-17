@@ -4,12 +4,10 @@
 
 #include "ast.h"
 #include "ioutils.h"
-#include "lexer.h"
 #include "optutils.h"
-#include "syntax_analyzer.h"
 #include "utils.h"
 #include "logutils.h"
-#include "vector.h"
+#include "translator.h"
 
 ATTR_UNUSED static const char* LOG_OPT = "OPTIONS";
 ATTR_UNUSED static const char* LOG_APP = "APP";
@@ -43,22 +41,38 @@ int main(int argc, char* argv[])
     ast::AST astree = AST_INITLIST;
     ast::ctor(&astree);
 
+    Translator tr = TRANSLATOR_INILIST;
+    tr.astree = &astree;
+
     bool err_occured = false;
 
     BEGIN {
 
-        FILE* file = open_file(long_opts[1].arg, "r");
-        if(!file) {
+        FILE* file_ast = open_file(long_opts[1].arg, "r");
+        if(!file_ast) {
             err_occured = true;
             GOTO_END;
         }
 
-        err = ast::fread_infix(&astree, file, long_opts[1].arg);
+        err = ast::fread_infix(&astree, file_ast, long_opts[1].arg);
+
+        fclose(file_ast);
 
         if(err != ERR_NONE) {
             err_occured = true;
             GOTO_END;
         }
+
+        FILE* file_asm = open_file(long_opts[2].arg, "w");
+        if(!file_ast) {
+            err_occured = true;
+            GOTO_END;
+        }
+        tr.file = file_asm;
+
+        emit_program(&tr);
+
+        fclose(file_asm);
 
     } END;
 

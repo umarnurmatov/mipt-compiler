@@ -43,7 +43,9 @@ const char* value_str(token::Token* token)
         case TYPE_IDENTIFIER: 
         {
             utils_str_t* str = &token->val.str;
-            snprintf(buffer, buffer_len, "%.*s", (int) str->len, str->str);
+            snprintf(buffer, buffer_len, 
+                     "%.*s | env id: %d | id: %d", 
+                     (int) str->len, str->str, token->scope_id, token->inner_scope_id);
             return buffer;
         }
         case TYPE_NUM_LITERAL:

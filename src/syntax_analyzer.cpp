@@ -220,6 +220,20 @@ static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer)
         return NULL;
     }
 
+    Env* new_env = create_env();
+
+    int func_sym_id = add_symbol_to_env(
+        new_env, 
+        &node_id->token.val.str, 
+        SYMBOL_TYPE_FUNCTION);
+
+    utils_assert(func_sym_id >= 0);
+
+    int env_id = ast::add_enviroment(analyzer->astree, &new_env);
+
+    analyzer->astree->current_env = new_env;
+    analyzer->astree->current_env_id = env_id;
+
     GET_CURRENT_TOKEN_(token);
     if(token->type == token::TYPE_SEPARATOR
        && token->val.sep_type == token::SEPARATOR_TYPE_PAR_OPEN) {
@@ -250,16 +264,10 @@ static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer)
         return NULL;
     }
 
-    int sym_id = ast::add_symbol(
-        analyzer->astree, 
-        &node_id->token.val.str, 
-        SYMBOL_TYPE_FUNCTION);
-
-    utils_assert(sym_id >= 0);
-
-    node_id->token.id = sym_id;
-    node_id->left = node_parlist;
-    node_id->right = node_body;
+    node_id->token.scope_id       = env_id;
+    node_id->token.inner_scope_id = func_sym_id;
+    node_id->left                 = node_parlist;
+    node_id->right                = node_body;
 
     return node_id;
 }
@@ -273,12 +281,13 @@ static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer)
     ast::ASTNode* node = get_identifier_(analyzer);
 
     if(node) {
-        int sym_id = ast::add_symbol(
-            analyzer->astree, 
+        int sym_id = add_symbol_to_env(
+            analyzer->astree->current_env, 
             &node->token.val.str, 
-            SYMBOL_TYPE_PARAMETER);
+            SYMBOL_TYPE_VARIABLE);
 
-        node->token.id = sym_id;
+        node->token.scope_id       = analyzer->astree->current_env_id;
+        node->token.inner_scope_id = sym_id;
     }
 
     GET_CURRENT_TOKEN_(token);
@@ -289,14 +298,15 @@ static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer)
 
         ast::ASTNode* node_right = get_identifier_(analyzer);
 
-        int sym_id = ast::add_symbol(
-            analyzer->astree, 
+        int sym_id = add_symbol_to_env(
+            analyzer->astree->current_env, 
             &node_right->token.val.str, 
-            SYMBOL_TYPE_PARAMETER);
+            SYMBOL_TYPE_VARIABLE);
+
+        node_right->token.scope_id       = analyzer->astree->current_env_id;
+        node_right->token.inner_scope_id = sym_id;
 
         UTILS_LOGD(LOG_SYNTAX, "%d", sym_id);
-
-        node_right->token.id = sym_id;
 
         node = NEW_NODE(token, node, node_right);
 
@@ -601,14 +611,15 @@ static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer)
             return NULL;
         }
 
-        int sym_id = ast::add_symbol(
-            analyzer->astree, 
+        int sym_id = add_symbol_to_env(
+            analyzer->astree->current_env,
             &left->token.val.str, 
             SYMBOL_TYPE_VARIABLE);
 
         utils_assert(sym_id >= 0);
 
-        left->token.id = sym_id;
+        left->token.scope_id       = analyzer->astree->current_env_id;
+        left->token.inner_scope_id = sym_id;
 
         return NEW_NODE(token, left, right);
     }
@@ -731,13 +742,16 @@ ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
     node = get_identifier_(analyzer);
 
     if(node) {
-        int sym_id = ast::find_symbol(analyzer->astree, &node->token.val.str, SYMBOL_TYPE_VARIABLE);
+        int sym_id = find_symbol(analyzer->astree->current_env, &node->token.val.str, SYMBOL_TYPE_VARIABLE);
 
         if(sym_id < 0) {
             LOG_SYNTAX_ERR_("unknown symbol %s", token::value_str(&node->token));
             NFREE(node);
             return NULL;
         }
+
+        node->token.scope_id       = analyzer->astree->current_env_id;
+        node->token.inner_scope_id = sym_id;
     }
 
     return node;

@@ -41,7 +41,7 @@ ATTR_UNUSED static const char* LOG_AST = "AST";
 
 #endif // _DEBUG
 
-static Err fwrite_node_(ASTNode* node, FILE* file);
+static Err fwrite_node_(AST* astree, ASTNode* node, FILE* file);
 
 ATTR_UNUSED static void print_node_ptr_(FILE* file, void* ptr);
 
@@ -73,9 +73,9 @@ Err ctor(AST* astree)
     
     vector_ctor(&astree->to_delete, to_delete_cap, sizeof(ASTNode*));
 
-    const size_t name_table_cap = 10;
+    const size_t env_cap = 10;
     
-    vector_ctor(&astree->name_table, name_table_cap, sizeof(Symbol));
+    vector_ctor(&astree->envs, env_cap, sizeof(Env*));
 
     return ERR_NONE;
 }
@@ -111,7 +111,13 @@ void dtor(AST* astree)
 
     vector_dtor(&astree->to_delete);
 
-    vector_dtor(&astree->name_table);
+    for(size_t i = 0; i < astree->envs.size; ++i) {
+        Env* env = *(Env**)vector_at(&astree->envs, i);
+        vector_dtor(&env->symbol_table);
+        free(env);
+    }
+
+    vector_dtor(&astree->envs);
 }
 
 void free_subtree(ASTNode* node)
@@ -140,7 +146,7 @@ Err fwrite_infix(AST* astree, FILE* stream)
     utils_assert(stream);
     utils_assert(astree->root);
 
-    Err err = fwrite_node_(astree->root->left, stream);
+    Err err = fwrite_node_(astree, astree->root->left, stream);
     return err;
 }
 
@@ -284,11 +290,10 @@ Err scan_token_(AST* astree, token::Token* token)
 
     *token = TOKEN_INITLIST;
 
-
     char* end = strchr(astree->buf.ptr + astree->buf.pos, ' ');
     ssize_t tok_str_len = end - astree->buf.ptr - astree->buf.pos;
 
-    UTILS_LOGD(LOG_AST, "%.*s", tok_str_len,astree->buf.ptr + astree->buf.pos);
+    UTILS_LOGD(LOG_AST, "node %.*s", tok_str_len,astree->buf.ptr + astree->buf.pos);
 
     BEGIN {
         // Keyword, separator or operator
@@ -306,49 +311,102 @@ Err scan_token_(AST* astree, token::Token* token)
         if(tok_found) GOTO_END;
 
         // Numeric
-        int val = atoi(astree->buf.ptr);
-        if(val != 0) {
+        int val = 0;
+        ssize_t pos_prev = astree->buf.pos;
+        ssize_t pos_cur = pos_prev;
+        while('0' <= astree->buf.ptr[pos_cur] && astree->buf.ptr[pos_cur] <= '9') {
+            int digit = astree->buf.ptr[pos_cur] - '0';
+            val = val * 10 + digit;
+            pos_cur++;
+        }
+
+        if(pos_prev != pos_cur) {
             token->type = token::TYPE_NUM_LITERAL;
             token->val  = { .num = val };
-            GOTO_END;
-        }
-        else if(astree->buf.ptr[astree->buf.pos] == '0') {
-            token->type = token::TYPE_NUM_LITERAL;
-            token->val  = { .num = 0 };
+            UTILS_LOGD(LOG_AST, "got num %d", val);
             GOTO_END;
         }
 
         // Identifier
+        char* id_end = strchr(astree->buf.ptr + astree->buf.pos, ':');
+        char* id_str_ptr = astree->buf.ptr + astree->buf.pos;
+        ssize_t id_str_len = id_end - astree->buf.ptr - astree->buf.pos;
+
         token->type = token::TYPE_IDENTIFIER;
         token->val  = {
             .str = {
-                .str = astree->buf.ptr + astree->buf.pos,
-                .len = (unsigned) tok_str_len
+                .str = id_str_ptr,
+                .len = (unsigned) id_str_len
             }
         };
 
+        size_t symbol_str_len = (size_t)(end - id_end - 1);
+        char* symbol_ptr = id_end + 1;
+
+        if(strncmp("FUNC", symbol_ptr, symbol_str_len) == 0) {
+            Env* new_env = create_env();
+
+            int func_sym_id = add_symbol_to_env(
+                new_env, 
+                &token->val.str, 
+                SYMBOL_TYPE_FUNCTION);
+
+            utils_assert(func_sym_id >= 0);
+
+            int env_id = ast::add_enviroment(astree, &new_env);
+
+            astree->current_env    = new_env;
+            astree->current_env_id = env_id;
+            
+        }
+        else if(strncmp("VAR", symbol_ptr, symbol_str_len) == 0) {
+            int sym_id = add_symbol_to_env(
+                astree->current_env, 
+                &token->val.str, 
+                SYMBOL_TYPE_VARIABLE);
+
+            token->scope_id       = astree->current_env_id;
+            token->inner_scope_id = sym_id;
+        }
+        else if(strncmp("PAR", symbol_ptr, symbol_str_len) == 0) {
+            int sym_id = add_symbol_to_env(
+                astree->current_env, 
+                &token->val.str, 
+                SYMBOL_TYPE_PARAMETER);
+
+            token->scope_id       = astree->current_env_id;
+            token->inner_scope_id = sym_id;
+        }
+
+        UTILS_LOGD(LOG_AST, "got symbol %.*s %.*s", symbol_str_len, symbol_ptr, id_str_len, id_str_ptr);
+        
     } END;
     
     astree->buf.pos += tok_str_len;
     return ERR_NONE;
 }
 
-Err fwrite_node_(ASTNode* node, FILE* stream)
+static Err fwrite_node_(AST* astree, ASTNode* node, FILE* stream)
 {
     utils_assert(node);
     utils_assert(stream);
 
     Err err = ERR_NONE;
-
-    fprintf(stream, "( %s ", token::value_str(&node->token));
+    if(node->token.type == token::TYPE_IDENTIFIER) {
+        Env* identifier_env = get_enviroment(astree, node->token.scope_id);
+        Symbol* sym = symbol_at(identifier_env, node->token.inner_scope_id);
+        fprintf(stream, "( %.*s:%s ", node->token.val.str.len, node->token.val.str.str, symbol_type_str(sym->type));
+    }
+    else
+        fprintf(stream, "( %s ", token::value_str(&node->token));
 
     if(node->left)
-        err = fwrite_node_(node->left, stream);
+        err = fwrite_node_(astree, node->left, stream);
     else
         fprintf(stream, TOKEN_NIL_STR);
 
     if(node->right)
-        err = fwrite_node_(node->right, stream);
+        err = fwrite_node_(astree, node->right, stream);
     else
         fprintf(stream, " " TOKEN_NIL_STR " ");
 
@@ -422,38 +480,15 @@ ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent)
     return new_node;
 }
 
-int find_symbol(AST* astree, utils_str_t* str, SymbolType type)
+int add_enviroment(AST* astree, Env** enviroment)
 {
-    AST_ASSERT_OK_(astree);
-    utils_assert(str);
-
-    for(size_t ind = 0; ind < astree->name_table.size; ++ind) {
-        Symbol* sym = (Symbol*)vector_at(&astree->name_table, ind);
-        if(sym->type == type && str->len == sym->str.len && strncmp(sym->str.str, str->str, str->len) == 0) {
-            return (signed) ind;
-        }
-    }
-
-    return -1;
+    vector_push(&astree->envs, enviroment);
+    return astree->envs.size - 1;
 }
 
-int add_symbol(AST* astree, utils_str_t* str, SymbolType type)
+Env* get_enviroment(AST* astree, int env_id)
 {
-    AST_ASSERT_OK_(astree);
-    utils_assert(str);
-
-    int id = find_symbol(astree, str, type);
-    if(id >= 0) return id;
-
-    Symbol sym = {
-        .str  = *str,
-        .hash = 0,
-        .type = type
-    };
-
-    vector_push(&astree->name_table, &sym);
-
-    return (signed)astree->name_table.size - 1;
+    return *(Env**)vector_at(&astree->envs, env_id);
 }
 
 #ifdef _DEBUG

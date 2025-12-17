@@ -14,7 +14,7 @@ namespace token {
         .val      = { .num = 0 },  \
         .fileline = 0,             \
         .filepos  = 0,             \
-        .id       = 0              \
+        .scope_id = 0              \
     }                              
 
 enum Type
@@ -90,7 +90,8 @@ struct Token
     ssize_t fileline;
     ssize_t filepos;
 
-    int id; // for name table, do not ask why it's here
+    int inner_scope_id;
+    int scope_id; // for name table, do not ask why it's here
             // actually it's because i was too lazy to separate
             // nodes and tokens :)
 };

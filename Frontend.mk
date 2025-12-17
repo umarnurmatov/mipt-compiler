@@ -1,12 +1,11 @@
-
 # PROGRAM CONFIG
-BUILD_DIR    := build/backend
+BUILD_DIR    := build/frontend
 SRC_DIR      := src
 INCLUDE_DIRS := include
-LOG_DIR      := log/backend
-EXECUTABLE   := backend.out
+LOG_DIR      := log/frontend
+EXECUTABLE   := frontend.out
 
--include $(SRC_DIR)/backend.src
+-include $(SRC_DIR)/frontend.src
 OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(notdir $(SOURCES)))
 DEPS := $(patsubst %.o,%.d,$(OBJS))
 
@@ -62,7 +61,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 .PHONY: run
 run: $(BUILD_DIR)/$(EXECUTABLE)
-	./$< --log=log.html --in=out.ast --out=out.ast
+	./$< --log=log-frontend.html --in=input.txt --out=out.ast
 
 .PHONY: clean
 clean:

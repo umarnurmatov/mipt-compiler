@@ -14,7 +14,8 @@
         .root        = NULL,            \
         .size        = 0,               \
         .to_delete   = VECTOR_INITLIST, \
-        .name_table  = VECTOR_INITLIST, \
+        .envs        = VECTOR_INITLIST, \
+        .current_env = NULL,            \
         .buf = {            \
             .ptr = NULL,    \
             .len = 0,       \
@@ -41,7 +42,10 @@ struct AST
     size_t   size;
 
     Vector to_delete;
-    Vector name_table;
+
+    Vector envs;
+    Env*   current_env;
+    int    current_env_id;
 
     struct {
         char*   ptr;
@@ -66,9 +70,9 @@ ASTNode* new_node(token::Token* token, ASTNode *left, ASTNode *right, ASTNode *p
 
 ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent);
 
-int find_symbol(AST* astree, utils_str_t* str, SymbolType type);
+int add_enviroment(AST* astree, Env** enviroment);
 
-int add_symbol(AST* astree, utils_str_t* str, SymbolType type);
+Env* get_enviroment(AST* astree, int env_id);
 
 void free_subtree(ASTNode* node);
 
