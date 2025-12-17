@@ -42,16 +42,58 @@ IDENTIFIER         ::= [a-zA-Z_][0-9a-zA-Z_]*
 Tree is written in infix format: ``` (parent left right) ```:
 
 ```
-WHILE                 -> (<while> <condition> <body>)
-IF [if-clause only]   -> (<if> <condition> <body>)
-IF [with else-clause] -> (<if> <condition> (<else> <if-body> <else-body>))
+WHILE                 -> (WHILE <condition> <body>)
+IF [if-clause only]   -> (IF <condition> <body>)
+IF [with else-clause] -> (IF <condition> (ELSE <if-body> <else-body>))
 
-FUNCTION_CALL         -> (<call> <identifier> <argument_list>)
-ARGUMENT_LIST         -> (<comma> <expression> (<comma> <expression> (...)))
+FUNCTION_CALL         -> (CALL <identifier> <argument_list>)
+<argument_list>       -> (COMMA <expression> (COMMA <expression> (...)))
 
-BLOCK                 -> (<cur_open> <statement> (<cur_open> <statement> (...)))
-ASSIGMENT             -> (<assigment> <identifier> <expression>)
+BLOCK                 -> (SEMICOL <statement> (SEMICOL <statement> (...)))
+ASSIGMENT             -> (ASSGN <identifier> <expression>)
 
 FUNCTION_DECL         -> (<identifier> <parameter_list> <body>)
-PARAMETER_LIST        -> (<comma> <identifier> (<comma> <identifier> (...)))
+<parameter_list>      -> (COMMA <identifier> (COMMA <identifier> (...)))
+
+RETURN                -> (RET <identifier> nil)
+
+<identifier> = <id_str>:["VAR""FUNC"PAR"]
 ```
+
+## ASM
+
+FUNC_DECL ->
+
+:<func_name>
+<body>
+
+WHILE ->
+
+:<beginwhile>
+<expr>
+PUSH 0
+JE :<endwhile>
+<body>
+JMP <beginwhile>
+:<endwhile>
+
+IF (no else) ->
+
+<expr>
+PUSH 0
+JE :<endif>
+<body>
+:<endif>
+
+IF (with else) ->
+
+<expr>
+PUSH 0
+JE :<else>
+<if-body>
+JMP :<endif>
+:<else>
+<else-body>
+:<endif>
+
+
