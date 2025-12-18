@@ -59,6 +59,7 @@ static ast::ASTNode* get_gt_lt_           (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_add_sub_         (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_mul_div_         (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_pow_             (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_sqrt_            (SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_primary_         (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_numeric_literal_ (SyntaxAnalyzer* analyzer);
@@ -748,7 +749,29 @@ OPERATOR_(
     pow_, 
     token->type == token::TYPE_OPERATOR 
     && token->val.op_type == token::OPERATOR_TYPE_POW, 
-    get_primary_);
+    get_sqrt_);
+
+static ast::ASTNode* get_sqrt_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE;
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_OPERATOR 
+       && token->val.op_type == token::OPERATOR_TYPE_SQRT) {
+
+        INCREMENT_POS_;
+
+        ast::ASTNode* node = get_sqrt_(analyzer);
+
+        return NEW_NODE(token, node, NULL);
+    }
+    else {
+        return get_primary_(analyzer);
+    }
+}
 
 ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer)
 {

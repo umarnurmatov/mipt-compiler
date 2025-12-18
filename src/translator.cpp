@@ -166,6 +166,11 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
             emit_assignment_(tr, node);
             break;
 
+        case OPERATOR_TYPE_SQRT:
+            emit_node_(tr, node->left);
+            fprintf(tr->file, "SQR\n");
+            break;
+
         default:
             break;
     }

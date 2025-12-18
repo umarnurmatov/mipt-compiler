@@ -36,6 +36,7 @@ OP_GT_LT           ::= OP_ADD_SUB { ['>''<''>=''<='] OP_ADD_SUB }*
 OP_ADD_SUB         ::= OP_MUL_DIV { ['+''-'] OP_MUL_DIV }*
 OP_MUL_DIV         ::= OP_POW { ['*''/'] OP_POW }*
 OP_POWER           ::= PRIMARY { ['^'] PRIMARY }*
+OP_SQRT            ::= ['@'] OP_SQRT | PRIMARY
 PRIMARY            ::= FUNCTION_CALL | IDENTIFIER | LITERAL | '(' EXPRESSION ')'
 
 LITERAL            ::= NUMERIC_LITERAL | STRING_LITERAL

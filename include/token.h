@@ -48,24 +48,25 @@ enum OperatorType
     OPERATOR_TYPE_GEQ        = 0x0D,
     OPERATOR_TYPE_LEQ        = 0x0C,
     OPERATOR_TYPE_ASSIGN     = 0x0E,
+    OPERATOR_TYPE_SQRT       = 0x0F,
 };
 
 enum KeywordType
 {
-    KEYWORD_TYPE_WHILE       = 0x0F,
-    KEYWORD_TYPE_IF          = 0x10,
-    KEYWORD_TYPE_ELSE        = 0x11,
-    KEYWORD_TYPE_DEFUN       = 0x12,
-    KEYWORD_TYPE_RETURN      = 0x13,
+    KEYWORD_TYPE_WHILE       = 0x10,
+    KEYWORD_TYPE_IF          = 0x11,
+    KEYWORD_TYPE_ELSE        = 0x12,
+    KEYWORD_TYPE_DEFUN       = 0x13,
+    KEYWORD_TYPE_RETURN      = 0x14,
 };
 
 enum SeparatorType {
-    SEPARATOR_TYPE_PAR_OPEN    = 0x14,
-    SEPARATOR_TYPE_PAR_CLOSE   = 0x15,
-    SEPARATOR_TYPE_COMMA       = 0x16,
-    SEPARATOR_TYPE_SEMICOLON   = 0x17,
-    SEPARATOR_TYPE_CURLY_OPEN  = 0x18,
-    SEPARATOR_TYPE_CURLY_CLOSE = 0x19,
+    SEPARATOR_TYPE_PAR_OPEN    = 0x15,
+    SEPARATOR_TYPE_PAR_CLOSE   = 0x16,
+    SEPARATOR_TYPE_COMMA       = 0x17,
+    SEPARATOR_TYPE_SEMICOLON   = 0x18,
+    SEPARATOR_TYPE_CURLY_OPEN  = 0x19,
+    SEPARATOR_TYPE_CURLY_CLOSE = 0x1A,
 };
 
 /* --------------------------------- */
@@ -136,6 +137,7 @@ ATTR_UNUSED static TokenInfo TokenArr[] =
     MAKE_OPERATOR (">="    , "GEQ"         , TYPE_OPERATOR  , OPERATOR_TYPE_GEQ       ),
     MAKE_OPERATOR ("<="    , "LEQ"         , TYPE_OPERATOR  , OPERATOR_TYPE_LEQ       ),
     MAKE_OPERATOR ("="     , "ASSGN"       , TYPE_OPERATOR  , OPERATOR_TYPE_ASSIGN    ),
+    MAKE_OPERATOR ("@"     , "SQRT"        , TYPE_OPERATOR  , OPERATOR_TYPE_SQRT      ),
     MAKE_KEYWORD  ("while" , "WHILE"       , TYPE_KEYWORD   , KEYWORD_TYPE_WHILE      ),
     MAKE_KEYWORD  ("if"    , "IF"          , TYPE_KEYWORD   , KEYWORD_TYPE_IF         ),
     MAKE_KEYWORD  ("else"  , "ELSE"        , TYPE_KEYWORD   , KEYWORD_TYPE_ELSE       ),

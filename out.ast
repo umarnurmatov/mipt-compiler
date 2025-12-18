@@ -1,1 +1,1 @@
-( CUR_OPEN ( factorial:FUNC ( n:VAR nil nil )( SEMICOL ( IF ( EQ ( n:VAR nil nil )( 1 nil nil ))( SEMICOL ( RET ( 1 nil nil ) nil ) nil ))( SEMICOL ( RET ( MUL ( n:VAR nil nil )( CALL ( factorial:FUNC nil nil )( SUB ( n:VAR nil nil )( 1 nil nil )))) nil ) nil )))( main:FUNC nil( SEMICOL ( ASSGN ( res:VAR nil nil )( CALL ( factorial:FUNC nil nil )( 10 nil nil )))( SEMICOL ( RET ( res:VAR nil nil ) nil ) nil ))))
+( main:FUNC nil( SEMICOL ( RET ( MUL ( 2 nil nil )( SQRT ( 4 nil nil ) nil )) nil ) nil ))
