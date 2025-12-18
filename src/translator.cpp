@@ -26,11 +26,13 @@ static void emit_assignment_(Translator* tr, ast::ASTNode* node);
 static void emit_call_(Translator* tr, ast::ASTNode* node);
 
 static const char* get_func_name_(ast::ASTNode* node);
+static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd);
 
 void emit_program(Translator* tr)
 {
     fprintf(tr->file, "CALL :func_main\n");
-    fprintf(tr->file, "POPR A0\n");
+    fprintf(tr->file, "PUSHR A0\n");
+    fprintf(tr->file, "OUT\n");
     fprintf(tr->file, "HLT\n");
 
     emit_node_(tr, tr->astree->root);
@@ -125,42 +127,39 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
             break;
 
         case OPERATOR_TYPE_OR:
-            emit_node_(tr, node->left);
-            emit_node_(tr, node->right);
-            fprintf(tr->file, "MUL\n");
+            // emit_node_(tr, node->left);
+            // emit_node_(tr, node->right);
+            // fprintf(tr->file, "MUL\n");
             break;
 
         case OPERATOR_TYPE_AND:
-            emit_node_(tr, node->left);
-            emit_node_(tr, node->right);
-            fprintf(tr->file, "MUL\n");
+            // emit_node_(tr, node->left);
+            // emit_node_(tr, node->right);
+            // fprintf(tr->file, "MUL\n");
             break;
 
         case OPERATOR_TYPE_EQ:
-            emit_node_(tr, node->left);
-            emit_node_(tr, node->right);
-            fprintf(tr->file, "SUB\n");
-            fprintf(tr->file, "PUSH 0\n");
+            emit_comparasion_operator_(tr, node, "JE");
             break;
 
         case OPERATOR_TYPE_NEQ:
-            fprintf(tr->file, "SUB\n");
+            emit_comparasion_operator_(tr, node, "JNE");
             break;
 
         case OPERATOR_TYPE_GT:
-            fprintf(tr->file, "SUB\n");
+            emit_comparasion_operator_(tr, node, "JA");
             break;
 
         case OPERATOR_TYPE_LT:
-            fprintf(tr->file, "SUB\n");
+            emit_comparasion_operator_(tr, node, "JB");
             break;
 
         case OPERATOR_TYPE_GEQ:
-            fprintf(tr->file, "SUB\n");
+            emit_comparasion_operator_(tr, node, "JAE");
             break;
 
         case OPERATOR_TYPE_LEQ:
-            fprintf(tr->file, "SUB\n");
+            emit_comparasion_operator_(tr, node, "JBE");
             break;
 
         case OPERATOR_TYPE_ASSIGN:
@@ -170,6 +169,21 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
         default:
             break;
     }
+}
+
+static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd)
+{
+    emit_node_(tr, node->left);
+    emit_node_(tr, node->right);
+    fprintf(tr->file, "SUB\n");
+    fprintf(tr->file, "PUSH 0\n");
+    fprintf(tr->file, "%s :%s_true_%d\n", cmd, cmd, tr->label_id);
+    fprintf(tr->file, "PUSH 0\n");
+    fprintf(tr->file, "JMP :%s_false_%d\n", cmd, tr->label_id);
+    fprintf(tr->file, ":%s_true_%d\n", cmd, tr->label_id);
+    fprintf(tr->file, "PUSH 1\n");
+    fprintf(tr->file, ":%s_false_%d\n", cmd, tr->label_id);
+    tr->label_id++;
 }
 
 void emit_keyword_(Translator* tr, ast::ASTNode* node)
@@ -192,8 +206,10 @@ void emit_keyword_(Translator* tr, ast::ASTNode* node)
 
         case KEYWORD_TYPE_ELSE:
             break;
+
         case KEYWORD_TYPE_DEFUN:
             break;
+
         case KEYWORD_TYPE_RETURN:
             emit_return_(tr, node);
             break;
@@ -327,7 +343,7 @@ static void emit_variable_(Translator* tr, ast::ASTNode* node)
     utils_assert(node->token.inner_scope_id >= 0);
 
     // value
-    fprintf(tr->file, "PUSHM [SP-%d]\n", node->token.inner_scope_id);
+    fprintf(tr->file, "PUSHM [SP-%d]\n", node->token.inner_scope_id - 1);
 }
 
 static void emit_assignment_(Translator* tr, ast::ASTNode* node)
@@ -343,7 +359,7 @@ static void emit_assignment_(Translator* tr, ast::ASTNode* node)
     emit_node_(tr, node->right);
 
     utils_assert(node->left->token.inner_scope_id >= 0);
-    fprintf(tr->file, "POPM [SP-%d]\n", node->left->token.inner_scope_id);
+    fprintf(tr->file, "POPM [SP-%d]\n", node->left->token.inner_scope_id - 1);
 }
 
 static void emit_call_(Translator* tr, ast::ASTNode* node)
@@ -366,6 +382,10 @@ static void emit_call_(Translator* tr, ast::ASTNode* node)
         fprintf(tr->file, "POPM [SP-%d]\n", argcnt);
         arg = arg->right;
         argcnt++;
+    }
+    if(arg) {
+        emit_node_(tr, arg);
+        fprintf(tr->file, "POPM [SP-%d]\n", argcnt);
     }
 
     fprintf(tr->file, "CALL %s\n", get_func_name_(node->left));

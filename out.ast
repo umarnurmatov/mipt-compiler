@@ -1,1 +1,1 @@
-( main:FUNC nil( SEMICOL ( RET ( 0 nil nil ) nil ) nil ))
+( CUR_OPEN ( func:FUNC ( COMMA ( x1:VAR nil nil )( x2:VAR nil nil ))( SEMICOL ( IF ( GT ( x1:VAR nil nil )( x2:VAR nil nil ))( ELSE ( SEMICOL ( RET ( x1:VAR nil nil ) nil ) nil )( SEMICOL ( RET ( x2:VAR nil nil ) nil ) nil ))) nil ))( main:FUNC nil( SEMICOL ( ASSGN ( res:VAR nil nil )( ADD ( CALL ( func:FUNC nil nil )( COMMA ( 10 nil nil )( 2 nil nil )))( 1 nil nil )))( SEMICOL ( RET ( res:VAR nil nil ) nil ) nil ))))

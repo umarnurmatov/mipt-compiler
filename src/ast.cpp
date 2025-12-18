@@ -310,6 +310,11 @@ Err scan_token_(AST* astree, token::Token* token)
         }
         if(tok_found) GOTO_END;
 
+        if(strncmp(astree->buf.ptr + astree->buf.pos, "CALL", (unsigned) tok_str_len) == 0) {
+            token->type = token::TYPE_CALL;
+            GOTO_END;
+        }
+
         // Numeric
         int val = 0;
         ssize_t pos_prev = astree->buf.pos;

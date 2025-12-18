@@ -52,7 +52,7 @@ const char* value_str(token::Token* token)
             snprintf(buffer, buffer_len, "%d", token->val.num);
             return buffer;
         case TYPE_CALL:
-            return "function call";
+            return "CALL";
         case TYPE_TERMINATOR:
             return "terminator";
         case TYPE_FAKE:

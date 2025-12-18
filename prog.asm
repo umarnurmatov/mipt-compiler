@@ -1,7 +1,43 @@
 CALL :func_main
-POPR A0
+PUSHR A0
+OUT
 HLT
-:func_main
+:func_func
+PUSHM [SP-0]
+PUSHM [SP-1]
+SUB
 PUSH 0
+JA :JA_true_0
+PUSH 0
+JMP :JA_false_0
+:JA_true_0
+PUSH 1
+:JA_false_0
+PUSH 0
+JE :else_1
+PUSHM [SP-0]
+POPR A0
+RET
+JMP :endif_1
+:else_1
+PUSHM [SP-1]
+POPR A0
+RET
+:endif_1
+:func_main
+PUSH 2
+PUSHR SP
+ADD
+POPR SP
+PUSH 10
+POPM [SP-0]
+PUSH 2
+POPM [SP-1]
+CALL :func_func
+PUSHR A0
+PUSH 1
+ADD
+POPM [SP-0]
+PUSHM [SP-0]
 POPR A0
 RET
