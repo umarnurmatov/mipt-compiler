@@ -17,17 +17,23 @@ static void emit_keyword_(Translator* tr, ast::ASTNode* node);
 static void emit_while_(Translator* tr, ast::ASTNode* node);
 static void emit_if_(Translator* tr, ast::ASTNode* node);
 static void emit_while_(Translator* tr, ast::ASTNode* node);
+static void emit_return_(Translator* tr, ast::ASTNode* node);
 static void emit_num_literal_(Translator* tr, ast::ASTNode* node);
 static void emit_identifier_(Translator* tr, ast::ASTNode* node);
 static void emit_function_(Translator* tr, ast::ASTNode* node);
 static void emit_variable_(Translator* tr, ast::ASTNode* node);
 static void emit_assignment_(Translator* tr, ast::ASTNode* node);
+static void emit_call_(Translator* tr, ast::ASTNode* node);
+
+static const char* get_func_name_(ast::ASTNode* node);
 
 void emit_program(Translator* tr)
 {
-    emit_node_(tr, tr->astree->root);
+    fprintf(tr->file, "CALL :func_main\n");
+    fprintf(tr->file, "POPR A0\n");
+    fprintf(tr->file, "HLT\n");
 
-    fprintf(tr->file, "OUT\nHLT\n");
+    emit_node_(tr, tr->astree->root);
 }
 
 #define LOG_TRACE                                 \
@@ -65,18 +71,14 @@ void emit_node_(Translator* tr, ast::ASTNode* node)
             break;
 
         case token::TYPE_CALL:
+            emit_call_(tr, node);
             break;
 
         case token::TYPE_TERMINATOR:
-            break;
-
         case token::TYPE_FAKE:
-            emit_node_(tr, node->left);
-            break;
-
         case token::TYPE_NONE:
         default:
-            UTILS_LOGE(LOG_TRANSLATOR, "unknown token");
+            UTILS_LOGE(LOG_TRANSLATOR, "unsupported token");
             // ERROR
     }
 
@@ -129,11 +131,16 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
             break;
 
         case OPERATOR_TYPE_AND:
+            emit_node_(tr, node->left);
+            emit_node_(tr, node->right);
             fprintf(tr->file, "MUL\n");
             break;
 
         case OPERATOR_TYPE_EQ:
+            emit_node_(tr, node->left);
+            emit_node_(tr, node->right);
             fprintf(tr->file, "SUB\n");
+            fprintf(tr->file, "PUSH 0\n");
             break;
 
         case OPERATOR_TYPE_NEQ:
@@ -188,6 +195,7 @@ void emit_keyword_(Translator* tr, ast::ASTNode* node)
         case KEYWORD_TYPE_DEFUN:
             break;
         case KEYWORD_TYPE_RETURN:
+            emit_return_(tr, node);
             break;
 
         default:
@@ -250,6 +258,14 @@ void emit_if_(Translator* tr, ast::ASTNode* node)
     tr->label_id++;
 }
 
+static void emit_return_(Translator* tr, ast::ASTNode* node)
+{
+    emit_node_(tr, node->left);
+
+    fprintf(tr->file, "POPR A0\n");
+    fprintf(tr->file, "RET\n");
+}
+
 static void emit_num_literal_(Translator* tr, ast::ASTNode* node)
 {
     utils_assert(tr);
@@ -296,7 +312,7 @@ static void emit_function_(Translator* tr, ast::ASTNode* node)
 {
     LOG_TRACE;
 
-    fprintf(tr->file, ":func_%.*s\n", node->token.val.str.len, node->token.val.str.str);
+    fprintf(tr->file, "%s\n", get_func_name_(node));
 
     emit_node_(tr, node->right);
 }
@@ -311,7 +327,7 @@ static void emit_variable_(Translator* tr, ast::ASTNode* node)
     utils_assert(node->token.inner_scope_id >= 0);
 
     // value
-    fprintf(tr->file, "PUSHM [SP+%d]\n", node->token.inner_scope_id);
+    fprintf(tr->file, "PUSHM [SP-%d]\n", node->token.inner_scope_id);
 }
 
 static void emit_assignment_(Translator* tr, ast::ASTNode* node)
@@ -327,7 +343,46 @@ static void emit_assignment_(Translator* tr, ast::ASTNode* node)
     emit_node_(tr, node->right);
 
     utils_assert(node->left->token.inner_scope_id >= 0);
-    fprintf(tr->file, "POPM [SP+%d]\n", node->left->token.inner_scope_id);
+    fprintf(tr->file, "POPM [SP-%d]\n", node->left->token.inner_scope_id);
+}
+
+static void emit_call_(Translator* tr, ast::ASTNode* node)
+{
+    utils_assert(tr);
+    utils_assert(node);
+    
+    Env* identifier_env = get_enviroment(tr->astree, node->token.scope_id);
+    size_t stackframe_size = identifier_env->symbol_table.size - 1;
+
+    fprintf(tr->file, "PUSH %lu\n", stackframe_size);
+    fprintf(tr->file, "PUSHR SP\n");
+    fprintf(tr->file, "ADD\n");
+    fprintf(tr->file, "POPR SP\n");
+
+    ast::ASTNode* arg = node->right;
+    int argcnt = 0;
+    while(arg && arg->token.type == token::TYPE_SEPARATOR) {
+        emit_node_(tr, arg->left);
+        fprintf(tr->file, "POPM [SP-%d]\n", argcnt);
+        arg = arg->right;
+        argcnt++;
+    }
+
+    fprintf(tr->file, "CALL %s\n", get_func_name_(node->left));
+    fprintf(tr->file, "PUSHR A0\n");
+}
+
+static const char* get_func_name_(ast::ASTNode* node)
+{
+    utils_assert(node);
+
+    const size_t buf_size = 100;
+    static char buffer[buf_size] = "";
+    
+    snprintf(buffer, buf_size, ":func_%.*s", 
+             node->token.val.str.len, node->token.val.str.str);
+
+    return buffer;
 }
 
 #undef LOG_TRACE

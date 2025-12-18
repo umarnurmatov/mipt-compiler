@@ -1,1 +1,1 @@
-( main:FUNC ( param:VAR nil nil )( SEMICOL ( ASSGN ( a:VAR nil nil )( 5 nil nil ))( SEMICOL ( ASSGN ( b:VAR nil nil )( 0 nil nil ))( SEMICOL ( WHILE ( a:VAR nil nil )( SEMICOL ( ASSGN ( a:VAR nil nil )( SUB ( a:VAR nil nil )( 1 nil nil )))( SEMICOL ( ASSGN ( b:VAR nil nil )( ADD ( b:VAR nil nil )( 1 nil nil ))) nil ))) nil ))))
+( main:FUNC nil( SEMICOL ( RET ( 0 nil nil ) nil ) nil ))

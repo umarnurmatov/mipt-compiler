@@ -92,8 +92,8 @@ struct Token
 
     int inner_scope_id;
     int scope_id; // for name table, do not ask why it's here
-            // actually it's because i was too lazy to separate
-            // nodes and tokens :)
+                  // actually it's because i was too lazy to separate
+                  // nodes and tokens :)
 };
 
 struct TokenInfo

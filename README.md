@@ -1,5 +1,12 @@
 # Language
 
+## TODO
+1. extract buffer as separate structure
+2. use hash table for symbol table
+    1. add normal! scopes
+3. check for function params
+
+
 ## Grammar
 Language grammar in extended Backus-Naur form:
 ```

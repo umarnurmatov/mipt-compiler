@@ -1,9 +1,4 @@
-defun main(param)
+defun main()
 { 
-    a = 5;
-    b = 0;
-    while a {
-        a = a - 1;
-        b = b + 1;
-    }
+    return 0;
 }

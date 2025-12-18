@@ -16,6 +16,8 @@ const char* symbol_type_str(SymbolType type)
             return "PAR";
         case SYMBOL_TYPE_FUNCTION:
             return "FUNC";
+        case SYMBOL_TYPE_NONE:
+            return "NONE";
         default:
             return NULL;
     }

@@ -47,6 +47,7 @@ static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_while_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_if_(SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_else_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_return_(SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer);
 
@@ -483,6 +484,32 @@ static ast::ASTNode* get_else_(SyntaxAnalyzer* analyzer)
     return NULL;
 }
 
+static ast::ASTNode* get_return_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE;
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD 
+       && token->val.kw_type == token::KEYWORD_TYPE_RETURN){
+
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_expr = get_expr_(analyzer);
+
+        if(!node_expr) {
+            LOG_SYNTAX_ERR_("expected expression");
+            return NULL;
+        }
+
+        return NEW_NODE(token, node_expr, NULL);
+    }
+
+    return NULL;
+}
+
 static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer)
 {
     SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
@@ -549,6 +576,9 @@ static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer)
             semicol_needed = false;
             GOTO_END;
         }
+
+        node = get_return_(analyzer);
+        if(node) GOTO_END;
 
         node = get_assignment_(analyzer);
         if(node) GOTO_END;
