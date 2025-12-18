@@ -24,6 +24,8 @@ ELSE               ::= "else" BLOCK
 RETURN             ::= "return" EXPRESSION
 DECLARATION        ::= IDENTIFIER | ASSIGMENT
 ASSIGNMENT         ::= IDENTIFIER '=' EXPRESSION
+IN                 ::= '>>' IDENTIFIER
+OUT                ::= '<<' EXPRESSION
 
 FUNCTION_CALL      ::= IDENTIFIER'(' ARGUMENT_LIST ')'
 ARGUMENT_LIST      ::= { EXPRESSION { ',' EXPRESSION }* } | <none>
@@ -36,7 +38,7 @@ OP_GT_LT           ::= OP_ADD_SUB { ['>''<''>=''<='] OP_ADD_SUB }*
 OP_ADD_SUB         ::= OP_MUL_DIV { ['+''-'] OP_MUL_DIV }*
 OP_MUL_DIV         ::= OP_POW { ['*''/'] OP_POW }*
 OP_POWER           ::= PRIMARY { ['^'] PRIMARY }*
-OP_SQRT            ::= ['@'] OP_SQRT | PRIMARY
+OP_SQRT            ::= ['@'] OP_SQRT | OP_IN_OUT
 PRIMARY            ::= FUNCTION_CALL | IDENTIFIER | LITERAL | '(' EXPRESSION ')'
 
 LITERAL            ::= NUMERIC_LITERAL | STRING_LITERAL

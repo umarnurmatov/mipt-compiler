@@ -23,6 +23,8 @@ static void emit_identifier_  (Translator* tr, ast::ASTNode* node);
 static void emit_function_    (Translator* tr, ast::ASTNode* node);
 static void emit_variable_    (Translator* tr, ast::ASTNode* node);
 static void emit_assignment_  (Translator* tr, ast::ASTNode* node);
+static void emit_in_          (Translator* tr, ast::ASTNode* node);
+static void emit_out_         (Translator* tr, ast::ASTNode* node);
 static void emit_call_        (Translator* tr, ast::ASTNode* node);
 
 static const char* get_func_name_            (ast::ASTNode* node);
@@ -219,6 +221,14 @@ void emit_keyword_(Translator* tr, ast::ASTNode* node)
             emit_return_(tr, node);
             break;
 
+        case KEYWORD_TYPE_IN:
+            emit_in_(tr, node);
+            break;
+
+        case KEYWORD_TYPE_OUT:
+            emit_out_(tr, node);
+            break;
+
         default:
             break;
     }
@@ -374,9 +384,6 @@ static void emit_assignment_(Translator* tr, ast::ASTNode* node)
     utils_assert(node);
 
     LOG_TRACE;
-    // if(node->left->token.type != token::TYPE_IDENTIFIER) {
-    //     UTILS_LOGE(LOG_TRANSLATOR, "expected identifier"); 
-    // }
 
     emit_node_(tr, node->right);
 
@@ -384,10 +391,37 @@ static void emit_assignment_(Translator* tr, ast::ASTNode* node)
     fprintf(tr->file, "POPM [SP-%d]\n", node->left->token.inner_scope_id - 1);
 }
 
+static void emit_in_(Translator* tr, ast::ASTNode* node)
+{
+    utils_assert(tr);
+    utils_assert(node);
+
+    LOG_TRACE;
+
+    fprintf(tr->file, "IN\n");
+
+    utils_assert(node->left->token.inner_scope_id >= 0);
+    fprintf(tr->file, "POPM [SP-%d]\n", node->left->token.inner_scope_id - 1);
+}
+
+static void emit_out_(Translator* tr, ast::ASTNode* node)
+{
+    utils_assert(tr);
+    utils_assert(node);
+
+    LOG_TRACE;
+    
+    emit_node_(tr, node->left);
+
+    fprintf(tr->file, "OUT\n");
+}
+
 static void emit_call_(Translator* tr, ast::ASTNode* node)
 {
     utils_assert(tr);
     utils_assert(node);
+
+    LOG_TRACE;
     
     Env* func_env = get_enviroment(tr->astree, node->token.scope_id);
     size_t stackframe_size = func_env->symbol_table.size - 1;

@@ -51,6 +51,9 @@ static ast::ASTNode* get_return_          (SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_assignment_      (SyntaxAnalyzer* analyzer);
 
+static ast::ASTNode* get_in_              (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_out_             (SyntaxAnalyzer* analyzer);
+
 static ast::ASTNode* get_expr_            (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_or_              (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_and_             (SyntaxAnalyzer* analyzer);
@@ -592,6 +595,12 @@ static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer)
         node = get_assignment_(analyzer);
         if(node) GOTO_END;
 
+        node = get_in_(analyzer);
+        if(node) GOTO_END;
+
+        node = get_out_(analyzer);
+        if(node) GOTO_END;
+
         node = get_expr_(analyzer);
         if(node) GOTO_END;
 
@@ -661,6 +670,60 @@ static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer)
         left->token.inner_scope_id = sym_id;
 
         return NEW_NODE(token, left, right);
+    }
+
+    return NULL;
+}
+
+static ast::ASTNode* get_in_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE; 
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD
+       && token->val.kw_type == token::KEYWORD_TYPE_IN) {
+        
+        INCREMENT_POS_;
+
+        ast::ASTNode* node = get_identifier_(analyzer);
+
+        if(find_symbol(analyzer->astree->current_env, 
+                       &node->token.val.str, SYMBOL_TYPE_VARIABLE) < -1) {
+            LOG_SYNTAX_ERR_("unknown symbol %s", 
+                            token::value_str(&node->token));
+            return NULL;
+        }
+
+        return NEW_NODE(token, node, NULL);
+    }
+
+    return NULL;
+}
+
+static ast::ASTNode* get_out_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE; 
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD
+       && token->val.kw_type == token::KEYWORD_TYPE_OUT) {
+        
+        INCREMENT_POS_;
+
+        ast::ASTNode* node = get_expr_(analyzer);
+
+        if(!node) {
+            LOG_SYNTAX_ERR_("expected expression");
+            return NULL;
+        }
+
+        return NEW_NODE(token, node, NULL);
     }
 
     return NULL;
