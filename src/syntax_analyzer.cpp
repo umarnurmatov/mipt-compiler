@@ -910,6 +910,20 @@ ast::ASTNode* get_identifier_(SyntaxAnalyzer* analyzer)
         return NULL;
 
     ast::ASTNode* node = NEW_NODE(token, NULL, NULL);
+
+    // FIXME
+    if(analyzer->astree->current_env) {
+        int sym_id = add_symbol_to_env(
+            analyzer->astree->current_env, 
+            &node->token.val.str, 
+            SYMBOL_TYPE_VARIABLE);
+
+        if(sym_id >= 0) {
+            node->token.scope_id       = analyzer->astree->current_env_id;
+            node->token.inner_scope_id = sym_id;
+        }
+    }
+
     INCREMENT_POS_;
 
     return node;

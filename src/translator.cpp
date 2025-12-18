@@ -375,6 +375,7 @@ static void emit_variable_(Translator* tr, ast::ASTNode* node)
     utils_assert(node->token.inner_scope_id >= 0);
 
     // value
+    utils_assert(node->token.inner_scope_id >= 0);
     fprintf(tr->file, "PUSHM [SP-%d]\n", node->token.inner_scope_id - 1);
 }
 
@@ -429,9 +430,9 @@ static void emit_call_(Translator* tr, ast::ASTNode* node)
     ast::ASTNode* arg = node->right;
     int argcnt = 0;
     while(arg && arg->token.type == token::TYPE_SEPARATOR) {
-        emit_node_(tr, arg->left);
+        emit_node_(tr, arg->right);
         fprintf(tr->file, "POPM [SP+%d]\n", stackframe_size - argcnt);
-        arg = arg->right;
+        arg = arg->left;
         argcnt++;
     }
     if(arg) {

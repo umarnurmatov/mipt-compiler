@@ -101,6 +101,7 @@ static ssize_t lex_(Lexer* lex)
         POS_ += comment_offset;
         lex->buf.filepos += comment_offset;
 
+        bool found = false;
         for(size_t i = 0; i < SIZEOF(token::TokenArr); ++i) {
             if(POS_ + token::TokenArr[i].str_len < LEN_ 
                && strncmp(token::TokenArr[i].str, BUF_ + POS_, (unsigned) token::TokenArr[i].str_len) == 0) {
@@ -114,9 +115,11 @@ static ssize_t lex_(Lexer* lex)
 
                 POS_ += token::TokenArr[i].str_len;
                 lex->buf.filepos++;
-                continue;
+                found = true;
+                break;
             }
         }
+        if(found) continue;
 
         if(lex_numeric_(lex) > 0) continue;
 

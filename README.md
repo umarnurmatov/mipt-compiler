@@ -16,7 +16,7 @@ FUNCTION_DECL      ::= "defun" IDENTIFIER '(' PARAMETER_LIST ')' BLOCK
 PARAMETER_LIST     ::= { IDENTIFIER { ',' IDENTIFIER }* } | <none>
 
 BLOCK              ::= "{" STATEMENT* "}"
-STATEMENT          ::= {  WHILE | IF } | { { DECLARATION | ASSIGNMENT | RETURN } ';' }
+STATEMENT          ::= {  WHILE | IF } | { { IN | OUT | DECLARATION | ASSIGNMENT | RETURN } ';' }
 
 WHILE              ::= "while" EXPRESSION BLOCK
 IF                 ::= "if" EXPRESSION BLOCK ELSE?
@@ -24,8 +24,9 @@ ELSE               ::= "else" BLOCK
 RETURN             ::= "return" EXPRESSION
 DECLARATION        ::= IDENTIFIER | ASSIGMENT
 ASSIGNMENT         ::= IDENTIFIER '=' EXPRESSION
-IN                 ::= '>>' IDENTIFIER
-OUT                ::= '<<' EXPRESSION
+IN                 ::= 'in' IDENTIFIER
+OUT                ::= 'out' EXPRESSION
+OUT                ::= 'ramset' EXPRESSION
 
 FUNCTION_CALL      ::= IDENTIFIER'(' ARGUMENT_LIST ')'
 ARGUMENT_LIST      ::= { EXPRESSION { ',' EXPRESSION }* } | <none>
