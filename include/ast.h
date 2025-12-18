@@ -74,6 +74,9 @@ int add_enviroment(AST* astree, Env** enviroment);
 
 Env* get_enviroment(AST* astree, int env_id);
 
+// searches in [0, current_env_id]
+Env* find_enviroment(AST* astree, utils_str_t* str, SymbolType type);
+
 void free_subtree(ASTNode* node);
 
 void mark_to_delete(AST* astree, ASTNode* node);

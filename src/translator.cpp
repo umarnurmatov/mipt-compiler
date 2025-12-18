@@ -11,22 +11,22 @@ namespace compiler {
 
 static const char* LOG_TRANSLATOR = "TRANSLATOR";
 
-static void emit_node_(Translator* tr, ast::ASTNode* node);
-static void emit_operator_(Translator* tr, ast::ASTNode* node);
-static void emit_keyword_(Translator* tr, ast::ASTNode* node);
-static void emit_while_(Translator* tr, ast::ASTNode* node);
-static void emit_if_(Translator* tr, ast::ASTNode* node);
-static void emit_while_(Translator* tr, ast::ASTNode* node);
-static void emit_return_(Translator* tr, ast::ASTNode* node);
-static void emit_num_literal_(Translator* tr, ast::ASTNode* node);
-static void emit_identifier_(Translator* tr, ast::ASTNode* node);
-static void emit_function_(Translator* tr, ast::ASTNode* node);
-static void emit_variable_(Translator* tr, ast::ASTNode* node);
-static void emit_assignment_(Translator* tr, ast::ASTNode* node);
-static void emit_call_(Translator* tr, ast::ASTNode* node);
+static void emit_node_        (Translator* tr, ast::ASTNode* node);
+static void emit_operator_    (Translator* tr, ast::ASTNode* node);
+static void emit_keyword_     (Translator* tr, ast::ASTNode* node);
+static void emit_while_       (Translator* tr, ast::ASTNode* node);
+static void emit_if_          (Translator* tr, ast::ASTNode* node);
+static void emit_while_       (Translator* tr, ast::ASTNode* node);
+static void emit_return_      (Translator* tr, ast::ASTNode* node);
+static void emit_num_literal_ (Translator* tr, ast::ASTNode* node);
+static void emit_identifier_  (Translator* tr, ast::ASTNode* node);
+static void emit_function_    (Translator* tr, ast::ASTNode* node);
+static void emit_variable_    (Translator* tr, ast::ASTNode* node);
+static void emit_assignment_  (Translator* tr, ast::ASTNode* node);
+static void emit_call_        (Translator* tr, ast::ASTNode* node);
 
-static const char* get_func_name_(ast::ASTNode* node);
-static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd);
+static const char* get_func_name_            (ast::ASTNode* node);
+static void        emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd);
 
 void emit_program(Translator* tr)
 {

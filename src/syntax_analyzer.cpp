@@ -31,38 +31,38 @@ static const char* LOG_SYNTAX = "SYNTAX";
 
 #endif // _DEBUG
 
-static ast::ASTNode* get_general_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_general_         (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_program_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_program_         (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_parameter_list_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_func_decl_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_parameter_list_  (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_func_decl_       (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_argument_list_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_argument_list_   (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_func_call_       (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_block_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_block_           (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_statement_       (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_while_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_if_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_else_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_return_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_while_           (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_if_              (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_else_            (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_return_          (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_assignment_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_assignment_      (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_expr_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_or_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_and_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_eq_neq_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_gt_lt_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_add_sub_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_mul_div_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_pow_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_expr_            (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_or_              (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_and_             (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_eq_neq_          (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_gt_lt_           (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_add_sub_         (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_mul_div_         (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_pow_             (SyntaxAnalyzer* analyzer);
 
-static ast::ASTNode* get_primary_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_numeric_literal_(SyntaxAnalyzer* analyzer);
-static ast::ASTNode* get_identifier_(SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_primary_         (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_numeric_literal_ (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_identifier_      (SyntaxAnalyzer* analyzer);
 
 #ifdef _DEBUG
 
@@ -338,6 +338,14 @@ static ast::ASTNode* get_func_call_(SyntaxAnalyzer* analyzer)
     else {
         analyzer->pos = pos_prev;
         NFREE(node_ident);
+        return NULL;
+    }
+
+    if(ast::find_enviroment(analyzer->astree, 
+                            &node_ident->token.val.str, 
+                            SYMBOL_TYPE_FUNCTION) == NULL) {
+
+        LOG_SYNTAX_ERR_("unknown function %s", token::value_str(&node_ident->token));
         return NULL;
     }
 

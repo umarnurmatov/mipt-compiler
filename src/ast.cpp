@@ -17,7 +17,6 @@
 #include "symbol.h"
 #include "utils.h"
 #include "vector.h"
-#include "mathutils.h"
 
 namespace compiler {
 namespace ast {
@@ -488,12 +487,22 @@ ASTNode* copy_subtree(AST* astree, ASTNode* node, ASTNode* parent)
 int add_enviroment(AST* astree, Env** enviroment)
 {
     vector_push(&astree->envs, enviroment);
-    return astree->envs.size - 1;
+    return (signed) astree->envs.size - 1;
 }
 
 Env* get_enviroment(AST* astree, int env_id)
 {
-    return *(Env**)vector_at(&astree->envs, env_id);
+    return *(Env**)vector_at(&astree->envs, (unsigned) env_id);
+}
+
+Env* find_enviroment(AST* astree, utils_str_t* str, SymbolType type)
+{
+    for(size_t i = 0; i <= (unsigned) astree->current_env_id; ++i) {
+        Env* env = *(Env**)vector_at(&astree->envs, i);
+        if(find_symbol(env, str, type) != -1)
+            return env;
+    }
+    return NULL;
 }
 
 #ifdef _DEBUG
