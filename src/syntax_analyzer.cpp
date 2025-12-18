@@ -53,6 +53,7 @@ static ast::ASTNode* get_assignment_      (SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_in_              (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_out_             (SyntaxAnalyzer* analyzer);
+static ast::ASTNode* get_ramset_          (SyntaxAnalyzer* analyzer);
 
 static ast::ASTNode* get_expr_            (SyntaxAnalyzer* analyzer);
 static ast::ASTNode* get_or_              (SyntaxAnalyzer* analyzer);
@@ -601,6 +602,9 @@ static ast::ASTNode* get_statement_(SyntaxAnalyzer* analyzer)
         node = get_out_(analyzer);
         if(node) GOTO_END;
 
+        node = get_ramset_(analyzer);
+        if(node) GOTO_END;
+
         node = get_expr_(analyzer);
         if(node) GOTO_END;
 
@@ -724,6 +728,49 @@ static ast::ASTNode* get_out_(SyntaxAnalyzer* analyzer)
         }
 
         return NEW_NODE(token, node, NULL);
+    }
+
+    return NULL;
+}
+
+static ast::ASTNode* get_ramset_(SyntaxAnalyzer* analyzer)
+{
+    SYNTAX_ANANLYZER_ASSERT_OK_(analyzer);
+
+    LOG_STACKTRACE; 
+
+    GET_CURRENT_TOKEN_(token);
+
+    if(token->type == token::TYPE_KEYWORD
+       && token->val.kw_type == token::KEYWORD_TYPE_RAMSET) {
+        
+        INCREMENT_POS_;
+
+        ast::ASTNode* node_addr = get_expr_(analyzer);
+
+        if(!node_addr) {
+            LOG_SYNTAX_ERR_("expected expression");
+            return NULL;
+        }
+
+        GET_CURRENT_TOKEN_(sep);
+        if(!(sep->type == token::TYPE_SEPARATOR
+           && sep->val.sep_type == token::SEPARATOR_TYPE_COMMA)) {
+            LOG_SYNTAX_ERR_("expected comma");
+            return NULL;
+        }
+        else {
+            INCREMENT_POS_;
+        }
+        
+        ast::ASTNode* node_value = get_expr_(analyzer);
+
+        if(!node_value) {
+            LOG_SYNTAX_ERR_("expected expression");
+            return NULL;
+        }
+
+        return NEW_NODE(token, node_addr, node_value);
     }
 
     return NULL;

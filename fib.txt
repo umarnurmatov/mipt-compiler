@@ -8,6 +8,8 @@ defun factorial(n)
 
 defun main()
 { 
-    res = factorial(10);
+    x = 0;
+    in x;
+    res = factorial(x);
     return res;
 }

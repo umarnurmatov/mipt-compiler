@@ -25,6 +25,7 @@ static void emit_variable_    (Translator* tr, ast::ASTNode* node);
 static void emit_assignment_  (Translator* tr, ast::ASTNode* node);
 static void emit_in_          (Translator* tr, ast::ASTNode* node);
 static void emit_out_         (Translator* tr, ast::ASTNode* node);
+static void emit_ramset_      (Translator* tr, ast::ASTNode* node);
 static void emit_call_        (Translator* tr, ast::ASTNode* node);
 
 static const char* get_func_name_            (ast::ASTNode* node);
@@ -35,6 +36,7 @@ void emit_program(Translator* tr)
     fprintf(tr->file, "CALL :func_main\n");
     fprintf(tr->file, "PUSHR A0\n");
     fprintf(tr->file, "OUT\n");
+    fprintf(tr->file, "DRAW\n");
     fprintf(tr->file, "HLT\n");
 
     emit_node_(tr, tr->astree->root);
@@ -180,16 +182,19 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
 
 static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd)
 {
+    int lid = tr->label_id;
+    tr->label_id++;
+
     emit_node_(tr, node->left);
     emit_node_(tr, node->right);
     fprintf(tr->file, "SUB\n");
     fprintf(tr->file, "PUSH 0\n");
-    fprintf(tr->file, "%s :%s_true_%d\n", cmd, cmd, tr->label_id);
+    fprintf(tr->file, "%s :%s_true_%d\n", cmd, cmd, lid);
     fprintf(tr->file, "PUSH 0\n");
-    fprintf(tr->file, "JMP :%s_false_%d\n", cmd, tr->label_id);
-    fprintf(tr->file, ":%s_true_%d\n", cmd, tr->label_id);
+    fprintf(tr->file, "JMP :%s_false_%d\n", cmd, lid);
+    fprintf(tr->file, ":%s_true_%d\n", cmd, lid);
     fprintf(tr->file, "PUSH 1\n");
-    fprintf(tr->file, ":%s_false_%d\n", cmd, tr->label_id);
+    fprintf(tr->file, ":%s_false_%d\n", cmd, lid);
     tr->label_id++;
 }
 
@@ -229,6 +234,10 @@ void emit_keyword_(Translator* tr, ast::ASTNode* node)
             emit_out_(tr, node);
             break;
 
+        case KEYWORD_TYPE_RAMSET:
+            emit_ramset_(tr, node);
+            break;
+
         default:
             break;
     }
@@ -241,17 +250,20 @@ void emit_while_(Translator* tr, ast::ASTNode* node)
 
     LOG_TRACE;
 
-    fprintf(tr->file, ":beginwhile_%d\n", tr->label_id);
+    int lid = tr->label_id;
+    tr->label_id++;
+
+    fprintf(tr->file, ":beginwhile_%d\n", lid);
 
     emit_node_(tr, node->left);
 
     fprintf(tr->file, "PUSH 0\n");
-    fprintf(tr->file, "JE :endwhile_%d\n", tr->label_id);
+    fprintf(tr->file, "JE :endwhile_%d\n", lid);
     
     emit_node_(tr, node->right);
 
-    fprintf(tr->file, "JMP :beginwhile_%d\n", tr->label_id);
-    fprintf(tr->file, ":endwhile_%d\n", tr->label_id);
+    fprintf(tr->file, "JMP :beginwhile_%d\n", lid);
+    fprintf(tr->file, ":endwhile_%d\n", lid);
 
     tr->label_id++;
 }
@@ -263,30 +275,31 @@ void emit_if_(Translator* tr, ast::ASTNode* node)
 
     LOG_TRACE;
 
+    int lid = tr->label_id;
+    tr->label_id++;
+
     emit_node_(tr, node->left);
     
     fprintf(tr->file, "PUSH 0\n");
 
     if(node->right->token.val.kw_type == token::KEYWORD_TYPE_ELSE) {
-        fprintf(tr->file, "JE :else_%d\n", tr->label_id);
+        fprintf(tr->file, "JE :else_%d\n", lid);
 
         emit_node_(tr, node->right->left);
 
-        fprintf(tr->file, "JMP :endif_%d\n", tr->label_id);
-        fprintf(tr->file, ":else_%d\n", tr->label_id);
+        fprintf(tr->file, "JMP :endif_%d\n", lid);
+        fprintf(tr->file, ":else_%d\n", lid);
 
         emit_node_(tr, node->right->right);
 
     }
     else {
-        fprintf(tr->file, "JE :endif_%d\n", tr->label_id);
+        fprintf(tr->file, "JE :endif_%d\n", lid);
 
         emit_node_(tr, node->right);
     }
 
-    fprintf(tr->file, ":endif_%d\n", tr->label_id);
-
-    tr->label_id++;
+    fprintf(tr->file, ":endif_%d\n", lid);;
 }
 
 static void emit_return_(Translator* tr, ast::ASTNode* node)
@@ -415,6 +428,20 @@ static void emit_out_(Translator* tr, ast::ASTNode* node)
     emit_node_(tr, node->left);
 
     fprintf(tr->file, "OUT\n");
+}
+
+static void emit_ramset_(Translator* tr, ast::ASTNode* node)
+{
+    utils_assert(tr);
+    utils_assert(node);
+
+    LOG_TRACE;
+    emit_node_(tr, node->left);
+    fprintf(tr->file, "POPR T0\n");
+
+    static const int RAM_STACK_SIZE = 20;
+    emit_node_(tr, node->right);
+    fprintf(tr->file, "POPM [T0+%d]\n", RAM_STACK_SIZE);
 }
 
 static void emit_call_(Translator* tr, ast::ASTNode* node)

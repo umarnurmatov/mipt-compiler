@@ -1,0 +1,23 @@
+defun main()
+{
+    r = 0;
+    in r;
+
+    width = 30;
+
+    x = 0;
+    y = 0;
+    
+    while y < width {
+        x = 0;
+        while x < width {
+            if (y-r)*(y-r) + (x-r)*(x-r) < r*r {
+                ramset y * width + x, 35;
+            }
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+
+    return 0;
+}
