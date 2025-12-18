@@ -1,14 +1,13 @@
-defun func(x1, x2)
+defun factorial(n) 
 {
-    if x1 > x2 {
-        return x1;
+    if n == 1 {
+        return 1;
     }
-    else {
-        return x2;
-    }
+    return n * factorial(n-1);
 }
+
 defun main()
 { 
-    res = func(10, 2) + 1;
+    res = factorial(10);
     return res;
 }

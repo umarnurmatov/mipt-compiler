@@ -134,7 +134,7 @@ ATTR_UNUSED static TokenInfo TokenArr[] =
     MAKE_OPERATOR (">"     , "GT"          , TYPE_OPERATOR  , OPERATOR_TYPE_GT        ),
     MAKE_OPERATOR ("<"     , "LT"          , TYPE_OPERATOR  , OPERATOR_TYPE_LT        ),
     MAKE_OPERATOR (">="    , "GEQ"         , TYPE_OPERATOR  , OPERATOR_TYPE_GEQ       ),
-    MAKE_OPERATOR ("<="    , "LEQ"         , TYPE_OPERATOR  , OPERATOR_TYPE_NEQ       ),
+    MAKE_OPERATOR ("<="    , "LEQ"         , TYPE_OPERATOR  , OPERATOR_TYPE_LEQ       ),
     MAKE_OPERATOR ("="     , "ASSGN"       , TYPE_OPERATOR  , OPERATOR_TYPE_ASSIGN    ),
     MAKE_KEYWORD  ("while" , "WHILE"       , TYPE_KEYWORD   , KEYWORD_TYPE_WHILE      ),
     MAKE_KEYWORD  ("if"    , "IF"          , TYPE_KEYWORD   , KEYWORD_TYPE_IF         ),

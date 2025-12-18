@@ -2,11 +2,12 @@
 
 #include "ast.h"
 
-#define TRANSLATOR_INILIST \
-    {                      \
-        .astree = NULL,    \
-        .file   = NULL,    \
-        .label_id = 0      \
+#define TRANSLATOR_INILIST  \
+    {                       \
+        .astree = NULL,     \
+        .file   = NULL,     \
+        .current_env = NULL,\
+        .label_id = 0       \
     }
 
 namespace compiler {
@@ -14,6 +15,8 @@ namespace compiler {
 struct Translator {
     ast::AST* astree;
     FILE* file;
+
+    Env* current_env;
 
     int label_id;
 };

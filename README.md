@@ -62,7 +62,7 @@ ASSIGMENT             -> (ASSGN <identifier> <expression>)
 FUNCTION_DECL         -> (<identifier> <parameter_list> <body>)
 <parameter_list>      -> (COMMA <identifier> (COMMA <identifier> (...)))
 
-RETURN                -> (RET <identifier> nil)
+RETURN                -> (RET <expression> <function>)
 
 <identifier> = <id_str>:["VAR""FUNC"PAR"]
 ```

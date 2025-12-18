@@ -2,42 +2,59 @@ CALL :func_main
 PUSHR A0
 OUT
 HLT
-:func_func
+:func_factorial
+PUSH 1
+PUSHR SP
+ADD
+POPR SP
 PUSHM [SP-0]
-PUSHM [SP-1]
+PUSH 1
 SUB
 PUSH 0
-JA :JA_true_0
+JE :JE_true_0
 PUSH 0
-JMP :JA_false_0
-:JA_true_0
+JMP :JE_false_0
+:JE_true_0
 PUSH 1
-:JA_false_0
+:JE_false_0
 PUSH 0
-JE :else_1
-PUSHM [SP-0]
+JE :endif_1
+PUSH 1
 POPR A0
-RET
-JMP :endif_1
-:else_1
-PUSHM [SP-1]
-POPR A0
+PUSHR SP
+PUSH 1
+SUB
+POPR SP
 RET
 :endif_1
+PUSHM [SP-0]
+PUSHM [SP-0]
+PUSH 1
+SUB
+POPM [SP+1]
+CALL :func_factorial
+PUSHR A0
+MUL
+POPR A0
+PUSHR SP
+PUSH 1
+SUB
+POPR SP
+RET
 :func_main
-PUSH 2
+PUSH 1
 PUSHR SP
 ADD
 POPR SP
 PUSH 10
-POPM [SP-0]
-PUSH 2
-POPM [SP-1]
-CALL :func_func
+POPM [SP+1]
+CALL :func_factorial
 PUSHR A0
-PUSH 1
-ADD
 POPM [SP-0]
 PUSHM [SP-0]
 POPR A0
+PUSHR SP
+PUSH 1
+SUB
+POPR SP
 RET

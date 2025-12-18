@@ -278,7 +278,16 @@ static void emit_return_(Translator* tr, ast::ASTNode* node)
 {
     emit_node_(tr, node->left);
 
+    tr->current_env = get_enviroment(tr->astree, node->token.scope_id);
+    size_t stackframe_size = tr->current_env->symbol_table.size - 1;
+
     fprintf(tr->file, "POPR A0\n");
+
+    fprintf(tr->file, "PUSHR SP\n");
+    fprintf(tr->file, "PUSH %lu\n", stackframe_size);
+    fprintf(tr->file, "SUB\n");
+    fprintf(tr->file, "POPR SP\n");
+
     fprintf(tr->file, "RET\n");
 }
 
@@ -328,7 +337,15 @@ static void emit_function_(Translator* tr, ast::ASTNode* node)
 {
     LOG_TRACE;
 
+    tr->current_env = get_enviroment(tr->astree, node->token.scope_id);
+    size_t stackframe_size = tr->current_env->symbol_table.size - 1;
+
     fprintf(tr->file, "%s\n", get_func_name_(node));
+
+    fprintf(tr->file, "PUSH %lu\n", stackframe_size);
+    fprintf(tr->file, "PUSHR SP\n");
+    fprintf(tr->file, "ADD\n");
+    fprintf(tr->file, "POPR SP\n");
 
     emit_node_(tr, node->right);
 }
@@ -367,25 +384,20 @@ static void emit_call_(Translator* tr, ast::ASTNode* node)
     utils_assert(tr);
     utils_assert(node);
     
-    Env* identifier_env = get_enviroment(tr->astree, node->token.scope_id);
-    size_t stackframe_size = identifier_env->symbol_table.size - 1;
-
-    fprintf(tr->file, "PUSH %lu\n", stackframe_size);
-    fprintf(tr->file, "PUSHR SP\n");
-    fprintf(tr->file, "ADD\n");
-    fprintf(tr->file, "POPR SP\n");
+    Env* func_env = get_enviroment(tr->astree, node->token.scope_id);
+    size_t stackframe_size = func_env->symbol_table.size - 1;
 
     ast::ASTNode* arg = node->right;
     int argcnt = 0;
     while(arg && arg->token.type == token::TYPE_SEPARATOR) {
         emit_node_(tr, arg->left);
-        fprintf(tr->file, "POPM [SP-%d]\n", argcnt);
+        fprintf(tr->file, "POPM [SP+%d]\n", stackframe_size - argcnt);
         arg = arg->right;
         argcnt++;
     }
     if(arg) {
         emit_node_(tr, arg);
-        fprintf(tr->file, "POPM [SP-%d]\n", argcnt);
+        fprintf(tr->file, "POPM [SP+%d]\n", stackframe_size - argcnt);
     }
 
     fprintf(tr->file, "CALL %s\n", get_func_name_(node->left));
