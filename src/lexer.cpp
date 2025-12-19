@@ -161,6 +161,13 @@ static ssize_t lex_numeric_(Lexer* lex)
     int val = 0;
     ssize_t prev = POS_;
 
+    int sign = 1;
+    if(BUF_[POS_] == '-') {
+        sign = -1;
+        POS_++;
+        lex->buf.filepos++;
+    }
+
     while(isdigit(BUF_[POS_])) {
         int digit = BUF_[POS_] - '0';
         val = val * 10 + digit;
@@ -174,7 +181,7 @@ static ssize_t lex_numeric_(Lexer* lex)
 
     token::Token tok = { 
         .type = token::TYPE_NUM_LITERAL, 
-        .val  = token::Value { .num = val } };
+        .val  = token::Value { .num = sign * val } };
 
     vector_push(&lex->tokens, &tok);
 

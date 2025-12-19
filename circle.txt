@@ -1,23 +1,31 @@
-defun main()
+defun draw(r)
 {
-    r = 0;
-    in r;
+    width = 100;
+    k = 2;
 
-    width = 30;
-
-    x = 0;
     y = 0;
-    
     while y < width {
         x = 0;
         while x < width {
-            if (y-r)*(y-r) + (x-r)*(x-r) < r*r {
-                ramset y * width + x, 35;
+            if (y-width/2)*(y-width/2) + (x-width/2)*(x-width/2)/k < r*r {
+                if (y-width/2)*(x-width/2) > 0 {
+                    ramset y * width + x, 35;
+                }
             }
             x = x + 1;
         }
         y = y + 1;
     }
+
+    return 0;
+}
+
+defun main()
+{
+    r = 0;
+    in r;
+    
+    ret = draw(r);
 
     return 0;
 }
