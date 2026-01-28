@@ -1,1 +1,0 @@
-( main:FUNC nil( SEMICOL ( RET ( MUL ( 2 nil nil )( SQRT ( 4 nil nil ) nil )) nil ) nil ))

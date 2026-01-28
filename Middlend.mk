@@ -1,11 +1,11 @@
 # PROGRAM CONFIG
-BUILD_DIR    := build/frontend
+BUILD_DIR    := build/middlend
 SRC_DIR      := src
-INCLUDE_DIRS := include/common include/frontend
-LOG_DIR      := log/frontend
-EXECUTABLE   := frontend.out
+INCLUDE_DIRS := include/common include/middlend
+LOG_DIR      := log/middlend
+EXECUTABLE   := middlend.out
 
--include $(SRC_DIR)/frontend.src
+-include $(SRC_DIR)/middlend.src
 OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o, $(SOURCES))
 DEPS := $(patsubst %.o,%.d,$(OBJS))
 
@@ -51,12 +51,10 @@ $(OBJS): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@$(CC) $(CPPFLAGS) -c -o $@ $< $(LIBS)
 
 .PHONY: run
-run: LOG ?= log-frontend.html
-run: IN ?= example/circle.txt
-run: OUT ?= build/out.ast
+run: LOG ?= log-middlend.html
+run: IN ?= build/out.ast
+run: OUT ?= build/out-reduced.ast
 run: $(BUILD_DIR)/$(EXECUTABLE)
-	@mkdir -p $(dir $(IN))
-	@mkdir -p $(dir $(OUT))
 	./$< --log=$(LOG) --in=$(IN) --out=$(OUT)
 
 .PHONY: clean

@@ -1,0 +1,1 @@
+SOURCES += common/vector.cpp common/token.cpp common/compiler_error.cpp common/ast.cpp middlend/middlend_main.cpp common/symbol.cpp middlend/optimize.cpp

@@ -1,27 +1,17 @@
-
 # PROGRAM CONFIG
 BUILD_DIR    := build/backend
 SRC_DIR      := src
-INCLUDE_DIRS := include
+INCLUDE_DIRS := include/common include/backend
 LOG_DIR      := log/backend
 EXECUTABLE   := backend.out
 
 -include $(SRC_DIR)/backend.src
-OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(notdir $(SOURCES)))
+OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o, $(SOURCES))
 DEPS := $(patsubst %.o,%.d,$(OBJS))
 
 # LIBRARIES
 LIBCUTILS_INCLUDE_DIR  := ../cutils/include
 LIBCUTILS              := -L../cutils/build/ -lcutils
-
-LIBNCURSES			   := -lncurses -lpanel -lmenu
-
-LIBFESTIVAL			   := -fopenmp -lasound -lestools -lestbase -leststring -lFestival 
-
-LIBSDL3 			   := -lSDL3
-
-LIBIMGUI_INCLUDE_DIR   := lib/imgui lib/imgui/backends
-LIBIMGUI			   := -Llib/imgui/build -limgui
 
 LIBS := $(LIBCUTILS) 
 
@@ -43,7 +33,7 @@ else
 CPPFLAGS_TARGET := $(CPPFLAGS_DEBUG) $(CPPFLAGS_ASAN)
 endif
 
-CPPFLAGS_WARNINGS := -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts -Wconditionally-supported -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral -Wformat-security -Wformat-signedness -Wformat=2 -Winline -Wlogical-op -Wnon-virtual-dtor -Wopenmp-simd -Woverloaded-virtual -Wpacked -Wpointer-arith -Winit-self -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=2 -Wsuggest-attribute=noreturn -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wswitch-default -Wswitch-enum -Wsync-nand -Wundef -Wunreachable-code -Wunused -Wuseless-cast -Wvariadic-macros -Wno-literal-suffix -Wno-missing-field-initializers -Wno-narrowing -Wno-old-style-cast -Wno-varargs -Wstack-protector -Wlarger-than=8192 -Werror=vla -Wstack-usage=8192
+CPPFLAGS_WARNINGS := -Wall -Wextra -Weffc++ -Waggressive-loop-optimizations -Wc++14-compat -Wmissing-declarations -Wcast-align -Wcast-qual -Wchar-subscripts -Wconditionally-supported -Wconversion -Wctor-dtor-privacy -Wempty-body -Wfloat-equal -Wformat-nonliteral -Wformat-security -Wformat-signedness -Wformat=2 -Winline -Wlogical-op -Wnon-virtual-dtor -Wopenmp-simd -Woverloaded-virtual -Wpacked -Wpointer-arith -Winit-self -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=2 -Wsuggest-attribute=noreturn -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wswitch-default -Wswitch-enum -Wsync-nand -Wundef -Wunreachable-code -Wunused -Wuseless-cast -Wvariadic-macros -Wno-literal-suffix -Wno-missing-field-initializers -Wno-narrowing -Wno-old-style-cast -Wno-varargs -Wstack-protector -Werror=vla -Wstack-usage=8192
 
 CPPFLAGS_DEFINES = -DLOG_DIR='"log"' -DIMG_DIR='"img"'
 
@@ -55,14 +45,17 @@ $(BUILD_DIR)/$(EXECUTABLE): $(OBJS)
 	@$(CC) $(CPPFLAGS) -o $@ $(OBJS) $(LIBS)
 	@echo done
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJS): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@echo Building $@...
-	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	@$(CC) $(CPPFLAGS) -c -o $@ $< $(LIBS)
 
 .PHONY: run
+run: LOG ?= log-backend.html
+run: IN ?= build/out.ast
+run: OUT ?= build/prog.asm
 run: $(BUILD_DIR)/$(EXECUTABLE)
-	./$< --log=log-backend.html --in=out.ast --out=prog.asm
+	./$< --log=$(LOG) --in=$(IN) --out=$(OUT)
 
 .PHONY: clean
 clean:

@@ -1,1 +1,1 @@
-SOURCES += vector.cpp token.cpp compiler_error.cpp ast.cpp backend_main.cpp symbol.cpp translator.cpp
+SOURCES += common/vector.cpp common/token.cpp common/compiler_error.cpp common/ast.cpp backend/backend_main.cpp common/symbol.cpp backend/translator.cpp
