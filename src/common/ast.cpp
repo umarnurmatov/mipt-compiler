@@ -316,8 +316,13 @@ Err scan_token_(AST* astree, token::Token* token)
 
         // Numeric
         int val = 0;
-        ssize_t pos_prev = astree->buf.pos;
-        ssize_t pos_cur = pos_prev;
+        int sign = 1;
+        ssize_t pos_cur = astree->buf.pos;
+        ssize_t pos_prev = pos_cur;
+        if(astree->buf.ptr[astree->buf.pos] == '-') {
+            sign = -1;
+            pos_cur++;
+        }
         while('0' <= astree->buf.ptr[pos_cur] && astree->buf.ptr[pos_cur] <= '9') {
             int digit = astree->buf.ptr[pos_cur] - '0';
             val = val * 10 + digit;
@@ -326,7 +331,7 @@ Err scan_token_(AST* astree, token::Token* token)
 
         if(pos_prev != pos_cur) {
             token->type = token::TYPE_NUM_LITERAL;
-            token->val  = { .num = val };
+            token->val  = { .num = sign * val };
             UTILS_LOGD(LOG_AST, "got num %d", val);
             GOTO_END;
         }

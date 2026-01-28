@@ -3,7 +3,7 @@ defun factorial(n)
     if n == 1 {
         return 1;
     }
-    return n * factorial(n-1);
+    return factorial(n-1) * n;
 }
 
 defun main()
@@ -11,5 +11,6 @@ defun main()
     x = 0;
     in x;
     res = factorial(x);
+    out res;
     return res;
 }
