@@ -30,6 +30,7 @@ static void emit_call_        (Translator* tr, ast::ASTNode* node);
 
 static const char* get_func_name_            (ast::ASTNode* node);
 static void        emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd);
+static int         get_new_label_id_         (Translator* tr);
 
 void emit_program(Translator* tr)
 {
@@ -181,8 +182,7 @@ void emit_operator_(Translator* tr, ast::ASTNode* node)
 
 static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const char* cmd)
 {
-    int lid = tr->label_id;
-    tr->label_id++;
+    int lid = get_new_label_id_(tr);
 
     emit_node_(tr, node->left);
     emit_node_(tr, node->right);
@@ -194,7 +194,6 @@ static void emit_comparasion_operator_(Translator* tr, ast::ASTNode* node, const
     fprintf(tr->file, ":%s_true_%d\n", cmd, lid);
     fprintf(tr->file, "PUSH 1\n");
     fprintf(tr->file, ":%s_false_%d\n\n", cmd, lid);
-    tr->label_id++;
 }
 
 void emit_keyword_(Translator* tr, ast::ASTNode* node)
@@ -249,8 +248,7 @@ void emit_while_(Translator* tr, ast::ASTNode* node)
 
     LOG_TRACE;
 
-    int lid = tr->label_id;
-    tr->label_id++;
+    int lid = get_new_label_id_(tr);
 
     fprintf(tr->file, ":beginwhile_%d\n", lid);
 
@@ -263,8 +261,6 @@ void emit_while_(Translator* tr, ast::ASTNode* node)
 
     fprintf(tr->file, "JMP :beginwhile_%d\n", lid);
     fprintf(tr->file, ":endwhile_%d\n\n", lid);
-
-    tr->label_id++;
 }
 
 void emit_if_(Translator* tr, ast::ASTNode* node)
@@ -274,8 +270,7 @@ void emit_if_(Translator* tr, ast::ASTNode* node)
 
     LOG_TRACE;
 
-    int lid = tr->label_id;
-    tr->label_id++;
+    int lid = get_new_label_id_(tr);
 
     emit_node_(tr, node->left);
     
@@ -457,13 +452,13 @@ static void emit_call_(Translator* tr, ast::ASTNode* node)
     int argcnt = 0;
     while(arg && arg->token.type == token::TYPE_SEPARATOR) {
         emit_node_(tr, arg->right);
-        fprintf(tr->file, "POPM [SP+%d]\n", stackframe_size - argcnt);
+        fprintf(tr->file, "POPM [SP+%lu]\n", stackframe_size - (size_t) argcnt);
         arg = arg->left;
         argcnt++;
     }
     if(arg) {
         emit_node_(tr, arg);
-        fprintf(tr->file, "POPM [SP+%d]\n", stackframe_size - argcnt);
+        fprintf(tr->file, "POPM [SP+%lu]\n", stackframe_size - (size_t) argcnt);
     }
 
     fprintf(tr->file, "CALL %s\n", get_func_name_(node->left));
@@ -478,9 +473,14 @@ static const char* get_func_name_(ast::ASTNode* node)
     static char buffer[buf_size] = "";
     
     snprintf(buffer, buf_size, ":func_%.*s", 
-             node->token.val.str.len, node->token.val.str.str);
+             (int) node->token.val.str.len, node->token.val.str.str);
 
     return buffer;
+}
+
+static int get_new_label_id_(Translator* tr)
+{
+    return tr->label_id++;
 }
 
 #undef LOG_TRACE
