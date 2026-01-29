@@ -1,13 +1,17 @@
 #include "optimize.h"
 
 #include "assertutils.h"
+#include "ast.h"
+#include "logutils.h"
 #include "token.h"
 #include "utils.h"
+#include "evaluate.h"
+#include "compiler_error.h"
 
 namespace compiler {
 namespace optimizer {
 
-ATTR_UNUSED static const char* LOG_CTG_DIFF_OPT = "DIFFTREE OPTIMIZE";
+ATTR_UNUSED static const char* LOG_OPTIMIZE = "OPTIMIZER";
 
 static bool treeChanged = false;
 
@@ -27,26 +31,37 @@ static ast::ASTNode* eliminate_neutral_pow_(ast::AST* astree, ast::ASTNode* node
 
 void optimize(ast::AST *astree)
 {
+    utils_assert(astree);
+
+    Err err = ERR_NONE; 
+
+    AST_DUMP(astree, err);
+
     do {
         treeChanged = false;
-        const_fold_(astree, astree->root->left);
-        eliminate_neutral_(astree, astree->root->left);
+        const_fold_(astree, astree->root);
+        eliminate_neutral_(astree, astree->root);
 
     } while(treeChanged);
+
+    AST_DUMP(astree, err);
 }
 
 static bool ast_subtree_holds_identifier_(ast::ASTNode* node)
 {
+    utils_assert(node);
+
     if(node->token.type == token::TYPE_IDENTIFIER)
         return true;
 
+    bool left_holds_id = false, right_holds_id = false;
     if(node->left)
-        return ast_subtree_holds_identifier_(node->left);
+        left_holds_id = ast_subtree_holds_identifier_(node->left);
 
-    else if (node->right)
-        return ast_subtree_holds_identifier_(node->right);
+    if (node->right)
+        right_holds_id = ast_subtree_holds_identifier_(node->right);
 
-    return false;
+    return left_holds_id | right_holds_id;
 }
 
 static ast::ASTNode* const_(int num)
@@ -67,13 +82,20 @@ static ast::ASTNode* const_fold_(ast::AST* astree, ast::ASTNode* node)
     if(node->right)
         right = const_fold_(astree, node->right);
 
-    bool left_holds_id = true, right_holds_id = true; 
+    if(node->token.type != token::TYPE_OPERATOR)
+        return node;
+
+    bool left_holds_id = false, right_holds_id = false; 
+
     if(left)  left_holds_id  = ast_subtree_holds_identifier_(left);
     if(right) right_holds_id = ast_subtree_holds_identifier_(right);
 
+    UTILS_LOGD(LOG_OPTIMIZE, "node %p %s, %d, %d", node, token::value_str(&node->token), left_holds_id, right_holds_id);
+
     if(!left_holds_id && !right_holds_id) {
 
-        ast::ASTNode* new_node = const_(0); // FIXME
+        int value = evaluate_operator(node);
+        ast::ASTNode* new_node = const_(value);
         
         if(node->parent->left == node)
             node->parent->left = new_node;

@@ -62,6 +62,16 @@ int main(int argc, char* argv[])
 
         optimizer::optimize(&astree);
 
+        FILE* file_ast_reduced = open_file(long_opts[2].arg, "w");
+        if(!file_ast_reduced) {
+            err_occured = true;
+            GOTO_END;
+        }
+
+        err = ast::fwrite_infix(&astree, file_ast_reduced);
+
+        fclose(file_ast_reduced);
+
     } END;
 
     ast::dtor(&astree);

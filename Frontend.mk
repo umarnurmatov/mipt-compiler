@@ -50,7 +50,7 @@ $(OBJS): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@$(CC) $(CPPFLAGS) -c -o $@ $< $(LIBS)
 
-.PHONY: run
+
 run: LOG ?= log-frontend.html
 run: IN ?= example/circle.txt
 run: OUT ?= build/out.ast
