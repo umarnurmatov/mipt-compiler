@@ -14,7 +14,6 @@ static const char* LOG_TRANSLATOR = "TRANSLATOR";
 static void emit_node_        (Translator* tr, ast::ASTNode* node);
 static void emit_operator_    (Translator* tr, ast::ASTNode* node);
 static void emit_keyword_     (Translator* tr, ast::ASTNode* node);
-static void emit_while_       (Translator* tr, ast::ASTNode* node);
 static void emit_if_          (Translator* tr, ast::ASTNode* node);
 static void emit_while_       (Translator* tr, ast::ASTNode* node);
 static void emit_return_      (Translator* tr, ast::ASTNode* node);
