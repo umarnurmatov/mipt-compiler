@@ -4,6 +4,7 @@ defun factorial(n)
         return 1;
     }
     return factorial(n-1) * n;
+    z = 10;
 }
 
 defun main()

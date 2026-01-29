@@ -29,6 +29,8 @@ static ast::ASTNode* eliminate_neutral_add_(ast::AST* astree, ast::ASTNode* node
 
 static ast::ASTNode* eliminate_neutral_pow_(ast::AST* astree, ast::ASTNode* node, ast::ASTNode* left, ast::ASTNode* right);
 
+static ast::ASTNode* eliminate_dead_code_(ast::AST* astree, ast::ASTNode* node);
+
 void optimize(ast::AST *astree)
 {
     utils_assert(astree);
@@ -36,6 +38,8 @@ void optimize(ast::AST *astree)
     Err err = ERR_NONE; 
 
     AST_DUMP(astree, err);
+
+    eliminate_dead_code_(astree, astree->root);
 
     do {
         treeChanged = false;
@@ -222,6 +226,28 @@ static ast::ASTNode* eliminate_neutral_pow_(ast::AST* astree, ast::ASTNode* node
 #undef IS_VALUE_
 #undef cL
 #undef cR
+
+static ast::ASTNode* eliminate_dead_code_(ast::AST* astree, ast::ASTNode* node)
+{
+    utils_assert(astree);
+    utils_assert(node);
+
+    if(node->token.type == token::TYPE_SEPARATOR 
+       && node->token.val.sep_type == token::SEPARATOR_TYPE_SEMICOLON) {
+
+        if(node->left->token.type == token::TYPE_KEYWORD
+           && node->left->token.val.kw_type == token::KEYWORD_TYPE_RETURN) {
+
+            if(node->right) ast::mark_to_delete(astree, node->right);
+            node->right = NULL;
+        }
+    }
+
+    if(node->left)  eliminate_dead_code_(astree, node->left);
+    if(node->right) eliminate_dead_code_(astree, node->right);
+
+    return node;
+}
 
 } // optimizer
 } // compiler
